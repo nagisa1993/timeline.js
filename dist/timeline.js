@@ -16816,23 +16816,14 @@ var timeline = function () {
 
 			vis = frame.append("g").attr("class", "data-series").attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
 
-			// vis.append("path")
-			// 	.attr("stroke-width", 5)
-			// 	.attr("stroke", "rgb(102,133,194)")
-			// 	.attr("d", "M 0 25 L 1 25 M 0 50 L 1 50 M 68 25 L 83 25 M 108 25 L 109 25 M 359 25 L 368 25 M 403 25 L 404 25 M 439 25 L 440 25 M 470 25 L 482 25 M 496 25 L 512 25 M 592 25 L 593 25 M 619 25 L 651 25");
-			d3.select(".data-series").selectAll("g").data(data.alignment).enter().append("g").each(function (alignment, i) {
-				console.log(alignment);
-				// 怎么样取当前的g？
-				// d3.select(this)
-				//   .selectAll("path")
-				// .data(alignment.value)
-				// .enter()
-				// 	.append("path")
-				// 	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取
-				// 	.attr("stroke-width", 5)
-				// 	.attr("d", (activity, j) => {
-				// 		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
-				// 	})
+			d3.select(".data-series").selectAll("g").data(data.alignment).enter().append("g")
+			//.each(test);
+			.each(function (alignment, i) {
+				// 这里不能用arrow function写，否则this就会读错为整体的dom
+				d3.select(this).selectAll("path").data(alignment.value).enter().append("path").attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取
+				.attr("stroke-width", 5).attr("d", function (activity, j) {
+					return "M " + activity.StartTime + " " + 25 * (2 * i + 1 + activity.Subrow) + " L " + activity.EndTime + " " + 25 * (2 * i + 1 + activity.Subrow);
+				});
 			});
 
 			group = svg.append("g").attr("class", "navigator-controller").attr("transform", "translate(150,0)");

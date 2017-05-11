@@ -10,7 +10,33 @@
 	<script type="text/javascript">
 		var dom = document.getElementById("editor");
 		var timeline = new timeline(dom);
-		timeline.draw();
+		var data = {"scale":1092, "alignment":[{"Height":2,"ID":[{"seq":"2014001"}],"value":[
+	{"EndTime":1,"StartTime":0,"Activity":"Patient Arrival","Duration":1,"Subrow":0},
+	{"EndTime":1,"StartTime":0,"Activity":"NRB","Duration":1,"Subrow":1},
+	{"EndTime":83,"StartTime":68,"Activity":"Pre-Oxygenation Chest Auscultation","Duration":15,"Subrow":0},
+	{"EndTime":109,"StartTime":108,"Activity":"Pre-Oxygenation Breathing Verbalized","Duration":1,"Subrow":0},
+	{"EndTime":368,"StartTime":359,"Activity":"Airway Assessment","Duration":9,"Subrow":0},
+	{"EndTime":404,"StartTime":403,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":440,"StartTime":439,"Activity":"Critical Window","Duration":1,"Subrow":0},
+	{"EndTime":482,"StartTime":470,"Activity":"RSI Sedative Meds","Duration":12,"Subrow":0},
+	{"EndTime":512,"StartTime":496,"Activity":"RSI Paralytic Meds","Duration":16,"Subrow":0},
+	{"EndTime":593,"StartTime":592,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":651,"StartTime":619,"Activity":"Laryngoscopy","Duration":32,"Subrow":0}
+]},
+{"Height":1,"ID":[{"seq":"2014002"}],"value":[
+	{"EndTime":1,"StartTime":0,"Activity":"Patient Arrival","Duration":1,"Subrow":0},
+	{"EndTime":31,"StartTime":19,"Activity":"Pre-Oxygenation Chest Auscultation","Duration":12,"Subrow":0},
+	{"EndTime":35,"StartTime":34,"Activity":"Pre-Oxygenation Breathing Verbalized","Duration":1,"Subrow":0},
+	{"EndTime":65,"StartTime":64,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":423,"StartTime":422,"Activity":"NRB","Duration":1,"Subrow":0},
+	{"EndTime":484,"StartTime":483,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":708,"StartTime":707,"Activity":"Decision to Intubate","Duration":1,"Subrow":0},
+	{"EndTime":858,"StartTime":857,"Activity":"Critical Window","Duration":1,"Subrow":0},
+	{"EndTime":932,"StartTime":920,"Activity":"RSI Sedative Meds","Duration":12,"Subrow":0},
+	{"EndTime":943,"StartTime":937,"Activity":"RSI Sedative Meds","Duration":6,"Subrow":0},
+	{"EndTime":959,"StartTime":956,"Activity":"RSI Paralytic Meds","Duration":3,"Subrow":0},
+	{"EndTime":1092,"StartTime":1037,"Activity":"Laryngoscopy","Duration":55,"Subrow":0}]}]};
+		timeline.draw(data);
 	</script>
 </body>
 </html>

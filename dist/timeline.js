@@ -16780,7 +16780,7 @@ var selectedElement,
     currentX = 0,
     currentAxis = 0,
     dx,
-    dataLength = 1092,
+    dataLength = 0,
     dataVisible,
     dataInvisible,
     rate,
@@ -16799,9 +16799,10 @@ var timeline = function () {
 
 	_createClass(timeline, [{
 		key: "draw",
-		value: function draw() {
+		value: function draw(data) {
 
-			//dataLength = Math.max(...)
+			dataLength = data.scale;
+			console.log(dataLength);
 
 			var svg = d3.select(dom).append("svg").attr("id", "svg").attr("width", 500).attr("height", 500);
 
@@ -16811,16 +16812,28 @@ var timeline = function () {
 			band.append("path").attr("d", "M 5 100 L 395 100").attr("stroke", "#e6e6e6");
 			band.append("path").attr("d", "M 5 150 L 395 150").attr("stroke", "#e6e6e6");
 
-			var frame = svg.append("g").attr("xlink:href", "#display");
+			var frame = svg.append("g").attr("id", "frame").attr("clip-path", "url(#display)");
 
 			vis = frame.append("g").attr("class", "data-series").attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
 
-			vis.append("path").attr("stroke-width", 5).attr("stroke", "rgb(102,133,194)").attr("d", "M 0 25 L 1 25 M 0 50 L 1 50 M 68 25 L 83 25 M 108 25 L 109 25 M 359 25 L 368 25 M 403 25 L 404 25 M 439 25 L 440 25 M 470 25 L 482 25 M 496 25 L 512 25 M 592 25 L 593 25 M 619 25 L 651 25");
-			// .data()
-			// .enter()
-			// .attr("d", () => {})
-			// .attr("stroke", )
-
+			// vis.append("path")
+			// 	.attr("stroke-width", 5)
+			// 	.attr("stroke", "rgb(102,133,194)")
+			// 	.attr("d", "M 0 25 L 1 25 M 0 50 L 1 50 M 68 25 L 83 25 M 108 25 L 109 25 M 359 25 L 368 25 M 403 25 L 404 25 M 439 25 L 440 25 M 470 25 L 482 25 M 496 25 L 512 25 M 592 25 L 593 25 M 619 25 L 651 25");
+			d3.select(".data-series").selectAll("g").data(data.alignment).enter().append("g").each(function (alignment, i) {
+				console.log(alignment);
+				// 怎么样取当前的g？
+				// d3.select(this)
+				//   .selectAll("path")
+				// .data(alignment.value)
+				// .enter()
+				// 	.append("path")
+				// 	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取
+				// 	.attr("stroke-width", 5)
+				// 	.attr("d", (activity, j) => {
+				// 		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
+				// 	})
+			});
 
 			group = svg.append("g").attr("class", "navigator-controller").attr("transform", "translate(150,0)");
 
@@ -16844,7 +16857,7 @@ function selectElement() {
 		// single move
 		console.log("single");
 		moveTarget = this;
-		dx = parseFloat(moveTarget.getAttributeNS(null, "transform").slice(10, -1).split(',')[0]); // 上一次的相对位移
+		dx = parseFloat(moveTarget.getAttribute("transform").slice(10, -1).split(',')[0]); // 上一次的相对位移
 		// make controller to the top
 		//svg.appendChild(evt.target);
 	} else {
@@ -16858,7 +16871,7 @@ function selectElement() {
 }
 
 function moveElement() {
-	currentAxis = moveTarget.getAttributeNS(null, "transform").slice(10, -1).split(',');
+	currentAxis = moveTarget.getAttribute("transform").slice(10, -1).split(',');
 
 	if (moveTarget.nodeName === "rect") {
 		dx += d3.event.clientX - currentX; // 移动滑动块，累计每次的位移，取相对位移，限定boundary
@@ -16869,7 +16882,7 @@ function moveElement() {
 		currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]); // 移动mask，取绝对位移，限定boundary
 	}
 
-	moveTarget.setAttributeNS(null, "transform", "translate(" + currentAxis.join(',') + ")");
+	moveTarget.setAttribute("transform", "translate(" + currentAxis.join(',') + ")");
 	currentX = d3.event.clientX;
 
 	// change mask according to controller movements

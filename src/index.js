@@ -6,7 +6,7 @@ var leftControl = null;
 var rightControl = null;
 var selectedElement, moveTarget,
   	currentX = 0, currentAxis = 0, dx,
-  	dataLength = 1092, dataVisible, dataInvisible, rate, scale, 
+  	dataLength = 0, dataVisible, dataInvisible, rate, scale, 
   	groupX = 150, maskX = 0, maskWidth = 100;
   	//svg = document.querySelector("svg"),
 
@@ -16,9 +16,10 @@ class timeline {
     	this._dom = dom;
 	}
 
-	draw() {
+	draw(data) {
 
-		//dataLength = Math.max(...)
+		dataLength = data.scale;
+		console.log(dataLength);
 
 		const svg = d3.select(dom).append("svg")
 			        .attr("id", "svg")
@@ -44,20 +45,35 @@ class timeline {
 			.attr("stroke", "#e6e6e6");
 
 		let frame = svg.append("g")
-					.attr("xlink:href","#display");
+					.attr("id", "frame")
+					.attr("clip-path","url(#display)");
 
 		vis = frame.append("g")
 					.attr("class", "data-series")
 					.attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
 
-		vis.append("path")
-			.attr("stroke-width", 5)
-			.attr("stroke", "rgb(102,133,194)")
-			.attr("d", "M 0 25 L 1 25 M 0 50 L 1 50 M 68 25 L 83 25 M 108 25 L 109 25 M 359 25 L 368 25 M 403 25 L 404 25 M 439 25 L 440 25 M 470 25 L 482 25 M 496 25 L 512 25 M 592 25 L 593 25 M 619 25 L 651 25");
-			// .data()
-			// .enter()
-			// .attr("d", () => {})
-			// .attr("stroke", )
+		// vis.append("path")
+		// 	.attr("stroke-width", 5)
+		// 	.attr("stroke", "rgb(102,133,194)")
+		// 	.attr("d", "M 0 25 L 1 25 M 0 50 L 1 50 M 68 25 L 83 25 M 108 25 L 109 25 M 359 25 L 368 25 M 403 25 L 404 25 M 439 25 L 440 25 M 470 25 L 482 25 M 496 25 L 512 25 M 592 25 L 593 25 M 619 25 L 651 25");
+		d3.select(".data-series").selectAll("g")
+			.data(data.alignment)
+			.enter()
+				.append("g")
+				.each((alignment, i) => {
+					console.log(alignment);
+					// 怎么样取当前的g？
+					// d3.select(this)
+					//   .selectAll("path")
+					  // .data(alignment.value)
+					  // .enter()
+					  // 	.append("path")
+					  // 	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取
+					  // 	.attr("stroke-width", 5)
+					  // 	.attr("d", (activity, j) => {
+					  // 		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
+					  // 	})
+				});
 
 
         group = svg.append("g")

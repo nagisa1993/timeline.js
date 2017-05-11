@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Timeline demo with js</title>
+</head>
+<body>
+<div id="editor"></div>
+<script type="text/javascript">
+	var data = {"scale":1092, "alignment":[{"Height":2,"ID":[{"seq":"2014001"}],"value":[
+	{"EndTime":1,"StartTime":0,"Activity":"Patient Arrival","Duration":1,"Subrow":0},
+	{"EndTime":1,"StartTime":0,"Activity":"NRB","Duration":1,"Subrow":1},
+	{"EndTime":83,"StartTime":68,"Activity":"Pre-Oxygenation Chest Auscultation","Duration":15,"Subrow":0},
+	{"EndTime":109,"StartTime":108,"Activity":"Pre-Oxygenation Breathing Verbalized","Duration":1,"Subrow":0},
+	{"EndTime":368,"StartTime":359,"Activity":"Airway Assessment","Duration":9,"Subrow":0},
+	{"EndTime":404,"StartTime":403,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":440,"StartTime":439,"Activity":"Critical Window","Duration":1,"Subrow":0},
+	{"EndTime":482,"StartTime":470,"Activity":"RSI Sedative Meds","Duration":12,"Subrow":0},
+	{"EndTime":512,"StartTime":496,"Activity":"RSI Paralytic Meds","Duration":16,"Subrow":0},
+	{"EndTime":593,"StartTime":592,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":651,"StartTime":619,"Activity":"Laryngoscopy","Duration":32,"Subrow":0}
+]},
+{"Height":1,"ID":[{"seq":"2014002"}],"value":[
+	{"EndTime":1,"StartTime":0,"Activity":"Patient Arrival","Duration":1,"Subrow":0},
+	{"EndTime":31,"StartTime":19,"Activity":"Pre-Oxygenation Chest Auscultation","Duration":12,"Subrow":0},
+	{"EndTime":35,"StartTime":34,"Activity":"Pre-Oxygenation Breathing Verbalized","Duration":1,"Subrow":0},
+	{"EndTime":65,"StartTime":64,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":423,"StartTime":422,"Activity":"NRB","Duration":1,"Subrow":0},
+	{"EndTime":484,"StartTime":483,"Activity":"BVM","Duration":1,"Subrow":0},
+	{"EndTime":708,"StartTime":707,"Activity":"Decision to Intubate","Duration":1,"Subrow":0},
+	{"EndTime":858,"StartTime":857,"Activity":"Critical Window","Duration":1,"Subrow":0},
+	{"EndTime":932,"StartTime":920,"Activity":"RSI Sedative Meds","Duration":12,"Subrow":0},
+	{"EndTime":943,"StartTime":937,"Activity":"RSI Sedative Meds","Duration":6,"Subrow":0},
+	{"EndTime":959,"StartTime":956,"Activity":"RSI Paralytic Meds","Duration":3,"Subrow":0},
+	{"EndTime":1092,"StartTime":1037,"Activity":"Laryngoscopy","Duration":55,"Subrow":0}]}]};
+	var editor = document.getElementById("editor");
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttributeNS(null, "width", "500");
+    svg.setAttributeNS(null, "height", "500");
+
+    var defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    var clipPath = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+    clipPath.setAttribute("id", "display");
+    var clipPathRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    clipPathRect.setAttributeNS(null, "x", "0");
+    clipPathRect.setAttributeNS(null, "y", "0");
+    clipPathRect.setAttributeNS(null, "width", "800");
+    clipPathRect.setAttributeNS(null, "height", "100");
+    clipPathRect.setAttributeNS(null, "fill", "none");
+    clipPath.appendChild(clipPathRect);
+    defs.appendChild(clipPath);
+    svg.appendChild(defs);
+
+    var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.setAttributeNS(null, "clip-path", "url(#display)");
+    var group2 = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group2.setAttributeNS(null, "class", "data-series");
+    //group2.setAttributeNS(null, "transform", "scale(3.71428,1) translate(-161.53846,0)");
+
+    // draw data
+    for(var i = 0; i < data.alignment.length; i++) {
+    	var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    	path.setAttributeNS(null, "stroke", "rgb(102,133,194)");
+    	path.setAttributeNS(null, "stroke-width", "5");
+    	var d = "";
+    	for(var j = 0; j < data.alignment[i].value.length; j++) {
+    		d += "M " + data.alignment[i].value[j].StartTime + " " + 25 * (2 * i + 1 + data.alignment[i].value[j].Subrow) + " L " + data.alignment[i].value[j].EndTime + " " + + 25 * (2 * i + 1 + data.alignment[i].value[j].Subrow) + " ";
+    	}
+    	path.setAttributeNS(null, "d", d);
+    	group2.appendChild(path);
+    }
+    group.appendChild(group2);
+    svg.appendChild(group);
+
+    // draw xaxis
+    console.log(group.getElementsByClassName("data-series"));
+    // draw yaxis
+
+    // draw controllers
+    editor.appendChild(svg);
+
+</script>
+</body>
+</html>

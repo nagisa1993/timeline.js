@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+</head>
+<body>
+
+<h1>Timeline demo</h1>
+
+<svg width="500" height="500">
+	<defs>
+		<clipPath id="display">
+			<rect x="0" y="0" width="800" height="100" fill="none"></rect>
+		</clipPath>
+	</defs>
+	<g clip-path="url(#display)">
+		<g class="data-series" transform="scale(3.71428,1) translate(-161.53846,0)">
+			<path id="data-display" fill="none" stroke="rgb(102,133,194)" stroke-width="5" d="M 0 25 L 1 25 M 0 50 L 1 50 M 68 25 L 83 25 M 108 25 L 109 25 M 359 25 L 368 25 M 403 25 L 404 25 M 439 25 L 440 25 M 470 25 L 482 25 M 496 25 L 512 25 M 592 25 L 593 25 M 619 25 L 651 25"></path>
+			<path fill="none" stroke="rgb(44, 186, 129)" stroke-width="5" d="M 0 75 L 1 75 M 19 75 L 31 75 M 34 75 L 35 75 M 64 75 L 65 75 M 422 75 L 423 75 M 483 75 L 484 75 M 707 75 L 708 75 M 857 75 L 858 75 M 920 75 L 932 75 M 937 75 L 943 75 M 956 75 L 959 75 M 1037 75 L 1092 75"></path>
+		</g>
+	</g>
+
+    <g class="navigator-grid-xaxis">
+		<path fill="none" stroke="#e6e6e6" stroke-width="1" d="M 100 100 L 100 150" opacity="1"></path>
+		<path fill="none" stroke="#e6e6e6" stroke-width="1" d="M 200 100 L 200 150" opacity="1"></path>
+		<path fill="none" stroke="#e6e6e6" stroke-width="1" d="M 300 100 L 300 150" opacity="1"></path>
+    </g>
+
+    <g class="navigator-grid-text">
+   		<text x="100.5" style="color:#999999;cursor:default;font-size:11px;fill:#999999;" text-anchor="start" transform="translate(0,0)" y="145" opacity="1"><tspan>5</tspan></text>
+   		<text x="200.5" style="color:#999999;cursor:default;font-size:11px;fill:#999999;" text-anchor="start" transform="translate(0,0)" y="145" opacity="1"><tspan>10</tspan></text>
+   		<text x="300.5" style="color:#999999;cursor:default;font-size:11px;fill:#999999;" text-anchor="start" transform="translate(0,0)" y="145" opacity="1"><tspan>15</tspan></text>
+    </g>
+
+    <g class="navigator-grid-yaxis">
+		<path fill="none" stroke="#e6e6e6" d="M 5 100 L 395 100" opacity="1"></path>
+		<path fill="none" stroke="#e6e6e6" d="M 5 150 L 395 150" opacity="1"></path>
+    </g>
+
+    <g class="navigator-controller" transform="translate(150,0)">
+   		<rect fill="rgba(102,133,194,0.3)" transform="translate(0,100)" style="cursor:pointer;" width="100" height="50" class="navigator-mask" onmousedown="selectElement(evt,'group')"></rect>
+   		<rect stroke="#cccccc" stroke-width="1" fill="#e6e6e6" width="5" height="15" style="cursor:pointer;" transform="translate(-2.5,115)" onmousedown="selectElement(evt,'single')" class="mask-controller"></rect> <!-- mask滑动块 -->
+   		<rect stroke="#cccccc" stroke-width="1" fill="#e6e6e6" width="5" height="15" style="cursor:pointer;"  transform="translate(97.5,115)" onmousedown="selectElement(evt,'single')" class="mask-controller"></rect> <!-- mask滑动块 -->
+    </g>
+</svg> 
+ 
+ <script type="text/javascript">
+  	var selectedElement, moveTarget,
+  		currentX = 0, currentAxis = 0, dx,
+  		//svg = document.querySelector("svg"),
+  		group = document.getElementsByClassName("navigator-controller")[0], groupX = 150,
+  		controller = document.getElementsByClassName("mask-controller"),
+  		mask = document.getElementsByClassName("navigator-mask")[0], maskX = 0, maskWidth = 100,
+  		rate, scale, 
+  		displayArea = document.getElementsByClassName("data-series")[0],
+  		dataLength = 1092, dataInvisible, dataVisible;
+
+	function selectElement(evt, moveType) {
+		selectedElement = evt.target;
+		currentX = evt.clientX;
+
+		if (moveType == 'single'){  // single move
+        	moveTarget = evt.target;
+        	dx = parseFloat(moveTarget.getAttributeNS(null, "transform").slice(10,-1).split(',')[0]);  // 上一次的相对位移
+        	// make controller to the top
+        	//svg.appendChild(evt.target);
+        }
+     	else { 						// group move
+        	moveTarget = evt.target.parentNode;
+     	}
+
+     	selectedElement.setAttributeNS(null, "onmousemove", "moveElement(evt)");
+		selectedElement.setAttributeNS(null, "onmouseout", "deselectElement(evt)");
+		selectedElement.setAttributeNS(null, "onmouseup", "deselectElement(evt)");
+	}
+
+	function moveElement(evt){
+		currentAxis = moveTarget.getAttributeNS(null, "transform").slice(10, -1).split(',');
+		
+		if(moveTarget.nodeName == "rect") { 
+			dx += evt.clientX - currentX;   // 移动滑动块，累计每次的位移，取相对位移，限定boundary
+			//currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 392.5 ? 392.5 - groupX : dx));
+			currentAxis[0] = dx;
+		}
+		else {
+			//currentAxis[0] = (evt.clientX - currentX + parseFloat(currentAxis[0]) < 5 ? 5 : (evt.clientX - currentX + parseFloat(currentAxis[0]) + maskWidth) > 395 ? 395 : evt.clientX - currentX + parseFloat(currentAxis[0]));  
+			currentAxis[0] = evt.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary
+
+		}
+		
+		newAxis = "translate(" + currentAxis.join(',') + ")";
+		moveTarget.setAttributeNS(null, "transform", newAxis);
+		currentX = evt.clientX;
+
+		// change mask according to controller movements
+		var ctrl1 = controller[0].attributes.transform.value.slice(10, -1).split(',')[0],
+			ctrl2 = controller[1].attributes.transform.value.slice(10, -1).split(',')[0];
+			groupX = group.attributes.transform.value.slice(10, -1).split(',')[0];
+		maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5; // 2.5是滑块的半长
+		maskWidth = Math.abs(parseFloat(ctrl1) - parseFloat(ctrl2));
+		mask.setAttribute("transform", "translate(" + maskX + "," + 100 + ")");
+		mask.setAttribute("width", maskWidth);
+
+		// change display area
+		rate = maskWidth / 390;
+		dataVisible = rate * dataLength;
+		dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / 390; // maskX + groupX是mask的绝对x距离
+		scale = 800 / (rate * dataLength);
+		displayArea.setAttribute("transform", "scale(" + scale + ",1) translate(" + dataInvisible + ",0)");
+	}
+
+	function deselectElement(evt){
+		console.log(selectedElement);
+		if(selectedElement != 0){
+			selectedElement.removeAttributeNS(null, "onmousemove");
+			selectedElement.removeAttributeNS(null, "onmouseout");
+			selectedElement.removeAttributeNS(null, "onmouseup");
+			selectedElement = 0;
+		}
+	}
+ </script>
+</body>
+</html>

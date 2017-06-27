@@ -59,12 +59,13 @@ class timeline {
 				//.each(test);
 				.each(function(alignment, i) {
 					// 这里不能用arrow function写，否则this就会读错为整体的dom
+					// can't use arrow function here
 					d3.select(this)
 					  .selectAll("path")
 					  .data(alignment.value)
 					  .enter()
 					  	.append("path")
-					  	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取
+					  	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取 // you can set attr for stroke from colormap
 					  	.attr("stroke-width", 5)
 					  	.attr("d", (activity, j) => {
 					  		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
@@ -119,7 +120,7 @@ function selectElement() {
 	if (this.getAttribute("class") === 'mask-controller'){  // single move
 		console.log("single");
     	moveTarget = this;
-    	dx = parseFloat(moveTarget.getAttribute("transform").slice(10,-1).split(',')[0]);  // 上一次的相对位移
+    	dx = parseFloat(moveTarget.getAttribute("transform").slice(10,-1).split(',')[0]);  // 上一次的相对位移 // last relative moving distance
     	// make controller to the top
     	//svg.appendChild(evt.target);
     }
@@ -136,13 +137,13 @@ function moveElement() {
 	currentAxis = moveTarget.getAttribute("transform").slice(10, -1).split(',');
 	
 	if(moveTarget.nodeName === "rect") { 
-		dx += d3.event.clientX - currentX;   // 移动滑动块，累计每次的位移，取相对位移，限定boundary
-		//currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 392.5 ? 392.5 - groupX : dx));
+		dx += d3.event.clientX - currentX;   // 移动滑动块，累计每次的位移，取相对位移，限定boundary // accumulation moving distance for left/right controllers = relative distance
+		//currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 392.5 ? 392.5 - groupX : dx)); // limit boundary
 		currentAxis[0] = dx;
 	}
 	else {
 		//currentAxis[0] = (evt.clientX - currentX + parseFloat(currentAxis[0]) < 5 ? 5 : (evt.clientX - currentX + parseFloat(currentAxis[0]) + maskWidth) > 395 ? 395 : evt.clientX - currentX + parseFloat(currentAxis[0]));  
-		currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary
+		currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance
 
 	}
 	
@@ -153,7 +154,7 @@ function moveElement() {
 	let ctrl1 = leftControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
 		ctrl2 = rightControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0];
 		groupX = group._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0];
-	maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5; // 2.5是滑块的半长
+	maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5; // 2.5是滑块的半长 // 2.5 = left/right controller's half width
 	maskWidth = Math.abs(parseFloat(ctrl1) - parseFloat(ctrl2));
 	mask._groups[0][0].setAttribute("transform", `translate(${maskX},${100})`);
 	mask._groups[0][0].setAttribute("width", maskWidth);
@@ -161,7 +162,7 @@ function moveElement() {
 	// change display area
 	rate = maskWidth / 390;
 	dataVisible = rate * dataLength;
-	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / 390; // maskX + groupX是mask的绝对x距离
+	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / 390; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
 	scale = 800 / (rate * dataLength);
 	vis._groups[0][0].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
 }

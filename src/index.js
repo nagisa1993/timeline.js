@@ -1,9 +1,11 @@
 import * as d3 from 'd3';
+import styles from './main.css';
 var vis = null;
 var group = null;
 var mask = null;
 var leftControl = null;
 var rightControl = null;
+var tooltipDiv = null;
 var selectedElement, moveTarget,
   	currentX = 0, currentAxis = 0, dx,
   	dataLength = 0, dataVisible, dataInvisible, rate, scale, 
@@ -52,6 +54,11 @@ class timeline {
 					.attr("class", "data-series")
 					.attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
 
+		tooltipDiv = d3.select(dom)
+					.append("div")
+					.attr("class", "tooltip")
+					.style("opacity", 0);
+
 		d3.select(".data-series").selectAll("g")
 			.data(data.alignment)
 			.enter()
@@ -70,8 +77,20 @@ class timeline {
 					  	.attr("d", (activity, j) => {
 					  		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
 					  	})
+						.on("mouseover", function(d) { // tooltip
+							tooltipDiv.transition()
+							   		  .duration(200)
+							   		  .style("opacity", .9);
+							tooltipDiv.html( "Case ID: " + alignment.ID[0].seq + "<br>" + "duration: " + d.Duration)
+									  .style("left", (d3.event.pageX) + "px")		
+                					  .style("top", (d3.event.pageY - 28) + "px");;
+						})
+						.on("mouseout", function(d) {
+							tooltipDiv.transition()
+									  .duration(500)
+									  .style("opacity", 0);
+						})
 				});
-
 
         group = svg.append("g")
 		        .attr("class", "navigator-controller")
@@ -79,9 +98,9 @@ class timeline {
 
         mask = group.append("rect")
         		.attr("class", "navigator-mask")
-        		.style("fill", "rgba(102,133,194,0.3)")
+        		// .style("fill", "rgba(102,133,194,0.3)")
         		.attr("transform", "translate(0,100)")
-        		.style("cursor", "pointer")
+        		// .style("cursor", "pointer")
         		.attr("width", 100)
         		.attr("height", 50)
         		.on("mousedown", selectElement);
@@ -90,10 +109,10 @@ class timeline {
         				.attr("class", "mask-controller")
         				.attr("stroke", "#cccccc")
         				.attr("stroke-width", 1)
-        				.style("fill", "#e6e6e6")
+        				// .style("fill", "#e6e6e6")
         				.attr("width", 5)
         				.attr("height", 15)
-        				.style("cursor", "pointer")
+        				// .style("cursor", "pointer")
         				.attr("transform", "translate(-2.5,115)")
         				.on("mousedown", selectElement);
 
@@ -101,10 +120,10 @@ class timeline {
         				.attr("class", "mask-controller")
         				.attr("stroke", "#cccccc")
         				.attr("stroke-width", 1)
-        				.style("fill", "#e6e6e6")
+        				// .style("fill", "#e6e6e6")
         				.attr("width", 5)
         				.attr("height", 15)
-        				.style("cursor", "pointer")
+        				// .style("cursor", "pointer")
         				.attr("transform", "translate(97.5,115)")
         				.on("mousedown", selectElement);
 	}

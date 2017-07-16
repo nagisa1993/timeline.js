@@ -1,0 +1,22 @@
+.tooltip {	
+    position: absolute;			
+    text-align: left;			
+    width: 120px;					
+    height: 28px;					
+    padding: 8px;				
+    font: 12px sans-serif;		
+    background: lightsteelblue;	
+    border: 0px;		
+    border-radius: 6px;			
+    pointer-events: none;			
+}
+
+.navigator-mask {
+    cursor: move;
+    fill: rgba(102,133,194,0.3);
+}
+
+.mask-controller {
+    fill: #e6e6e6;
+    cursor: ew-resize;
+}

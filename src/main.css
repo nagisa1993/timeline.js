@@ -1,3 +1,11 @@
+#svg {
+    border: 1px solid #e6e6e6;
+    background-color: #fdfdfd;
+}
+.visbackground, .bandbackground {
+    fill: none;
+}
+
 .tooltip {	
     position: absolute;			
     text-align: left;			

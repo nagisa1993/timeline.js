@@ -1,15 +1,22 @@
 import * as d3 from 'd3';
 import styles from './main.css';
-var vis = null;
+var vis = {},
+	band = {},
+	rate = {};
 var group = null;
 var mask = null;
 var leftControl = null;
 var rightControl = null;
 var tooltipDiv = null;
-var selectedElement, moveTarget,
+var selectedElement, moveTarget, strokeWidth, bandStrokeWidth,
   	currentX = 0, currentAxis = 0, dx,
-  	dataLength = 0, dataVisible, dataInvisible, rate, scale, 
+  	dataLength = 0, dataVisible, dataInvisible, maskRate, scale, 
   	groupX = 150, maskX = 0, maskWidth = 100;
+const margin = {top: 10, right: 10, bottom: 10, left: 10},
+	outerWidth = 950,
+	outerHeight = 500,
+	width = outerWidth - margin.left - margin.right,
+	height = outerHeight - margin.bottom - margin.top;
   	//svg = document.querySelector("svg"),
 
 class timeline {
@@ -23,41 +30,59 @@ class timeline {
 		dataLength = data.scale;
 		console.log(dataLength);
 
+		band.h = 50; // band height
+		vis.w = width;
+		vis.h = height - band.h - 5;
+
+		rate.w = width / dataLength;
+		rate.h = band.h / vis.h;
+
 		const svg = d3.select(dom).append("svg")
 			        .attr("id", "svg")
-			        .attr("width", 500)
-			        .attr("height", 500);
+			        .attr("width", outerWidth)
+			        .attr("height", outerHeight)
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 		const clipPath = svg.append("defs")
 						.append("clipPath")
 						.attr("id", "display")
 						.append("rect")
-						.attr("x", 0)
-						.attr("y", 0)
-						.attr("width", 800)
-						.attr("height", 100)
+						// .attr("x", 0)
+						// .attr("y", 0)
+						.attr("width", width)
+						.attr("height", height)
 						.style("fill", "none");
-
-		const band = svg.append("g");		
-		band.append("path")
-			.attr("d", "M 5 100 L 395 100")
-			.attr("stroke", "#e6e6e6");
-		band.append("path")
-			.attr("d", "M 5 150 L 395 150")	
-			.attr("stroke", "#e6e6e6");
-
+		
 		let frame = svg.append("g")
 					.attr("id", "frame")
 					.attr("clip-path","url(#display)");
+		// -------------------------------------------------------------------------------------
+		// visualization frame
+		
+		const initScale = width / (maskWidth / width * dataLength);
+		const initTrans = (-1) * (width / 2 - maskWidth / 2 ) * dataLength / width; 
+		console.log(initTrans);
 
-		vis = frame.append("g")
-					.attr("class", "data-series")
-					.attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
+		vis.g = frame.append("g")
+					.attr("class", "visband");
+		vis.g.append("g")
+			.attr("class", "data-series")
+			// .attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
+			.attr("transform", "scale(" + initScale + ",1) translate(" + initTrans + ",0)");
 
-		tooltipDiv = d3.select(dom)
-					.append("div")
-					.attr("class", "tooltip")
-					.style("opacity", 0);
+		vis.g.append("rect")
+			.attr("class", "visbackground")
+			.attr("width", vis.w)
+			.attr("height", vis.h);
+		
+
+		strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
+		console.log(strokeWidth);
+
+
+		// -------------------------------------------------------------------------------------
+		// data
 
 		d3.select(".data-series").selectAll("g")
 			.data(data.alignment)
@@ -73,7 +98,7 @@ class timeline {
 					  .enter()
 					  	.append("path")
 					  	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取 // you can set attr for stroke from colormap
-					  	.attr("stroke-width", 5)
+					  	.attr("stroke-width", strokeWidth)
 					  	.attr("d", (activity, j) => {
 					  		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
 					  	})
@@ -92,17 +117,70 @@ class timeline {
 						})
 				});
 
-        group = svg.append("g")
+		// -------------------------------------------------------------------------------------
+		// axis
+
+		const axis1 = frame.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(0," + vis.h + ")");	
+
+		axis1.append("path")
+			// .attr("d", "M 5 100 L 395 100")
+			.attr("d", "M0,0V0H" + width + "V0")
+			.attr("stroke", "#e6e6e6");
+
+		const axis2 = frame.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(0," + (vis.h + 50) + ")");
+		axis2.append("path")
+			// .attr("d", "M 5 150 L 395 150")	
+			.attr("d", "M0,0V0H" + width + "V0")
+			.attr("stroke", "#e6e6e6");
+
+		// -------------------------------------------------------------------------------------
+		// band
+		
+		bandStrokeWidth = band.h * strokeWidth / vis.h; 
+
+		band.g = frame.append("g")
+			.attr("class", "band")
+			.attr("transform", "translate(0," + vis.h + ")");
+
+		var items = band.g.selectAll("g")
+			.data(data.alignment)
+			.enter()
+			.append("g")
+			.each(function (alignment, i) {
+				d3.select(this)
+				.selectAll("path")
+				.data(alignment.value)
+				.enter()
+				.append("path")
+				.attr("stroke", "rgb(102,133,194)")
+				.attr("stroke-width", bandStrokeWidth)
+				.attr("d", (activity, j) => {
+					return `M ${activity.StartTime * rate.w} ${25 * (2 * i + 1 + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${25 * (2 * i + 1 + activity.Subrow) * rate.h}`
+				})
+
+			})
+
+
+		band.g.append("rect")
+			.attr("class", "bandbackground")
+			.attr("width", vis.w)
+			.attr("height", band.h);
+		
+		group = band.g.append("g")
 		        .attr("class", "navigator-controller")
-		        .attr("transform", "translate(150,0)");
+		        .attr("transform", "translate(" + (width / 2 - maskWidth / 2) + ",0)");
 
         mask = group.append("rect")
         		.attr("class", "navigator-mask")
         		// .style("fill", "rgba(102,133,194,0.3)")
-        		.attr("transform", "translate(0,100)")
+        		// .attr("transform", "translate(0,100)")
         		// .style("cursor", "pointer")
-        		.attr("width", 100)
-        		.attr("height", 50)
+        		.attr("width", maskWidth)
+        		.attr("height", band.h)
         		.on("mousedown", selectElement);
         
         leftControl = group.append("rect")
@@ -113,7 +191,7 @@ class timeline {
         				.attr("width", 5)
         				.attr("height", 15)
         				// .style("cursor", "pointer")
-        				.attr("transform", "translate(-2.5,115)")
+        				.attr("transform", "translate(-2.5,15)")
         				.on("mousedown", selectElement);
 
         rightControl = group.append("rect")
@@ -124,8 +202,18 @@ class timeline {
         				.attr("width", 5)
         				.attr("height", 15)
         				// .style("cursor", "pointer")
-        				.attr("transform", "translate(97.5,115)")
+        				.attr("transform", "translate(97.5,15)")
         				.on("mousedown", selectElement);
+
+		// -------------------------------------------------------------------------------------
+		// tooltip
+
+		tooltipDiv = d3.select(dom)
+					.append("div")
+					.attr("class", "tooltip")
+					.style("opacity", 0);
+
+        
 	}
 
 
@@ -175,15 +263,15 @@ function moveElement() {
 		groupX = group._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0];
 	maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5; // 2.5是滑块的半长 // 2.5 = left/right controller's half width
 	maskWidth = Math.abs(parseFloat(ctrl1) - parseFloat(ctrl2));
-	mask._groups[0][0].setAttribute("transform", `translate(${maskX},${100})`);
+	mask._groups[0][0].setAttribute("transform", `translate(${maskX},${0})`);
 	mask._groups[0][0].setAttribute("width", maskWidth);
 
 	// change display area
-	rate = maskWidth / 390;
-	dataVisible = rate * dataLength;
-	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / 390; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
-	scale = 800 / (rate * dataLength);
-	vis._groups[0][0].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
+	maskRate = maskWidth / width;
+	dataVisible = maskRate * dataLength;
+	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	scale = width / (maskRate * dataLength);
+	vis.g._groups[0][0].childNodes[0].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
 }
 
 function deselectElement() {

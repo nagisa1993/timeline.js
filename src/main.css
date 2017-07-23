@@ -6,6 +6,12 @@
     fill: none;
 }
 
+.zoom {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
 .tooltip {	
     position: absolute;			
     text-align: left;			

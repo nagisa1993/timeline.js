@@ -15,6 +15,7 @@ var selectedElement, moveTarget, strokeWidth, bandStrokeWidth,
 const margin = {top: 10, right: 10, bottom: 10, left: 10},
 	outerWidth = 950,
 	outerHeight = 500,
+	intervalRate = 0.5, // intervalRate = interval / path width;
 	width = outerWidth - margin.left - margin.right,
 	height = outerHeight - margin.bottom - margin.top;
   	//svg = document.querySelector("svg"),
@@ -32,7 +33,7 @@ class timeline {
 
 		band.h = 50; // band height
 		vis.w = width;
-		vis.h = height - band.h - 5;
+		vis.h = height - band.h - 5; // chart height
 
 		rate.w = width / dataLength;
 		rate.h = band.h / vis.h;
@@ -75,16 +76,16 @@ class timeline {
 			.attr("class", "visbackground")
 			.attr("width", vis.w)
 			.attr("height", vis.h);
-		
 
 		strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
 		console.log(strokeWidth);
 
 
+
 		// -------------------------------------------------------------------------------------
 		// data
 
-		d3.select(".data-series").selectAll("g")
+		var visItems = d3.select(".data-series").selectAll("g")
 			.data(data.alignment)
 			.enter()
 				.append("g")
@@ -100,7 +101,7 @@ class timeline {
 					  	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取 // you can set attr for stroke from colormap
 					  	.attr("stroke-width", strokeWidth)
 					  	.attr("d", (activity, j) => {
-					  		return `M ${activity.StartTime} ${25 * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${25 * (2 * i + 1 + activity.Subrow)}`;
+					  		return `M ${activity.StartTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)}`;
 					  	})
 						.on("mouseover", function(d) { // tooltip
 							tooltipDiv.transition()
@@ -159,7 +160,7 @@ class timeline {
 				.attr("stroke", "rgb(102,133,194)")
 				.attr("stroke-width", bandStrokeWidth)
 				.attr("d", (activity, j) => {
-					return `M ${activity.StartTime * rate.w} ${25 * (2 * i + 1 + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${25 * (2 * i + 1 + activity.Subrow) * rate.h}`
+					return `M ${activity.StartTime * rate.w} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) * rate.h}`
 				})
 
 			})
@@ -189,20 +190,20 @@ class timeline {
         				.attr("stroke-width", 1)
         				// .style("fill", "#e6e6e6")
         				.attr("width", 5)
-        				.attr("height", 15)
+        				.attr("height", 25)
         				// .style("cursor", "pointer")
-        				.attr("transform", "translate(-2.5,15)")
+        				.attr("transform", "translate(-2.5,12.5)")
         				.on("mousedown", selectElement);
 
         rightControl = group.append("rect")
         				.attr("class", "mask-controller")
         				.attr("stroke", "#cccccc")
         				.attr("stroke-width", 1)
-        				// .style("fill", "#e6e6e6")
+        				// .style("fill", "#e6eß6e6")
         				.attr("width", 5)
-        				.attr("height", 15)
+        				.attr("height", 25)
         				// .style("cursor", "pointer")
-        				.attr("transform", "translate(97.5,15)")
+        				.attr("transform", "translate(97.5,12.5)")
         				.on("mousedown", selectElement);
 
 		// -------------------------------------------------------------------------------------
@@ -213,14 +214,13 @@ class timeline {
 					.attr("class", "tooltip")
 					.style("opacity", 0);
 
-        
 	}
-
 
 }
 
 function selectElement() {
 	//console.log(this); // dom
+	console.log("select");
 	selectedElement = d3.select(this); // object
 	currentX = d3.event.clientX; // event.x
 
@@ -241,17 +241,20 @@ function selectElement() {
 }
 
 function moveElement() {
-	currentAxis = moveTarget.getAttribute("transform").slice(10, -1).split(',');
-	
+	currentAxis = moveTarget.getAttribute("transform").slice(10, -1).split(','); // ["392", "0"]
 	if(moveTarget.nodeName === "rect") { 
 		dx += d3.event.clientX - currentX;   // 移动滑动块，累计每次的位移，取相对位移，限定boundary // accumulation moving distance for left/right controllers = relative distance
-		//currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 392.5 ? 392.5 - groupX : dx)); // limit boundary
+		// currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 927.5 ? 927.5 - groupX : dx)); // limit boundary
 		currentAxis[0] = dx;
+		// console.log(dx);
 	}
 	else {
-		//currentAxis[0] = (evt.clientX - currentX + parseFloat(currentAxis[0]) < 5 ? 5 : (evt.clientX - currentX + parseFloat(currentAxis[0]) + maskWidth) > 395 ? 395 : evt.clientX - currentX + parseFloat(currentAxis[0]));  
-		currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance
-
+		if (this.getAttribute("transform")!=null) {
+			var maskTrans = parseFloat(this.getAttribute("transform").slice(10, -1).split(',')[0]);
+			console.log(maskTrans);
+			currentAxis[0] = (d3.event.clientX - currentX + parseFloat(currentAxis[0]) < 0 ? 0 : (d3.event.clientX - currentX + parseFloat(currentAxis[0])) > (width - maskWidth - maskTrans) ? (width - maskWidth - maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]));  
+	}
+		// currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance;
 	}
 	
 	moveTarget.setAttribute("transform", `translate(${currentAxis.join(',')})`);

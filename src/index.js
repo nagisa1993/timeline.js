@@ -3,15 +3,21 @@ import styles from './main.css';
 var vis = {},
 	band = {},
 	rate = {};
+var click = false;
 var group = null;
 var mask = null;
 var leftControl = null;
 var rightControl = null;
 var tooltipDiv = null;
 var selectedElement, moveTarget, strokeWidth, bandStrokeWidth,
-  	currentX = 0, currentAxis = 0, dx,
+  	currentX = 0, currentAxis = 0, dx, currentPosition = 0,
   	dataLength = 0, dataVisible, dataInvisible, maskRate, scale, 
-  	groupX = 150, maskX = 0, maskWidth = 100;
+  	groupX = 150, maskX = 0, maskWidth = 930;
+
+		var zoom = d3.zoom().scaleExtent([1, Infinity])
+    		.translateExtent([[0, 0], [100, 100]])
+    		.extent([[0, 0], [100, 100]])
+			.on("zoom", zoomed);
 const margin = {top: 10, right: 10, bottom: 10, left: 10},
 	outerWidth = 950,
 	outerHeight = 500,
@@ -43,7 +49,7 @@ class timeline {
 			        .attr("width", outerWidth)
 			        .attr("height", outerHeight)
 					.append("g")
-					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+					.attr("transform", `translate(${margin.left},${margin.top})`);
 
 		const clipPath = svg.append("defs")
 						.append("clipPath")
@@ -58,6 +64,7 @@ class timeline {
 		let frame = svg.append("g")
 					.attr("id", "frame")
 					.attr("clip-path","url(#display)");
+
 		// -------------------------------------------------------------------------------------
 		// visualization frame
 		
@@ -67,25 +74,26 @@ class timeline {
 
 		vis.g = frame.append("g")
 					.attr("class", "visband");
-		vis.g.append("g")
-			.attr("class", "data-series")
-			// .attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
-			.attr("transform", "scale(" + initScale + ",1) translate(" + initTrans + ",0)");
 
 		vis.g.append("rect")
 			.attr("class", "visbackground")
 			.attr("width", vis.w)
-			.attr("height", vis.h);
+			.attr("height", vis.h)
+			.call(zoom);
+
+		vis.g.append("g")
+			.attr("class", "data-series")
+			// .attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
+			.attr("transform", `scale(${initScale},1) translate(${initTrans},0)`);
+
 
 		strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
 		console.log(strokeWidth);
 
-
-
 		// -------------------------------------------------------------------------------------
 		// data
 
-		var visItems = d3.select(".data-series").selectAll("g")
+		let visItems = d3.select(".data-series").selectAll("g")
 			.data(data.alignment)
 			.enter()
 				.append("g")
@@ -107,7 +115,7 @@ class timeline {
 							tooltipDiv.transition()
 							   		  .duration(200)
 							   		  .style("opacity", .9);
-							tooltipDiv.html( "Case ID: " + alignment.ID[0].seq + "<br>" + "duration: " + d.Duration)
+							tooltipDiv.html( `Case ID: ${alignment.ID[0].seq}<br>duration: ${d.Duration}`)
 									  .style("left", (d3.event.pageX) + "px")		
                 					  .style("top", (d3.event.pageY - 28) + "px");;
 						})
@@ -118,24 +126,26 @@ class timeline {
 						})
 				});
 
+				
+
 		// -------------------------------------------------------------------------------------
 		// axis
 
 		const axis1 = frame.append("g")
 			.attr("class", "axis")
-			.attr("transform", "translate(0," + vis.h + ")");	
+			.attr("transform", `translate(0,${vis.h})`);	
 
 		axis1.append("path")
 			// .attr("d", "M 5 100 L 395 100")
-			.attr("d", "M0,0V0H" + width + "V0")
+			.attr("d", `M0,0V0H${width}V0`)
 			.attr("stroke", "#e6e6e6");
 
 		const axis2 = frame.append("g")
 			.attr("class", "axis")
-			.attr("transform", "translate(0," + (vis.h + 50) + ")");
+			.attr("transform", `translate(0,${vis.h + 50})`);
 		axis2.append("path")
 			// .attr("d", "M 5 150 L 395 150")	
-			.attr("d", "M0,0V0H" + width + "V0")
+			.attr("d", `M0,0V0H${width}V0`)
 			.attr("stroke", "#e6e6e6");
 
 		// -------------------------------------------------------------------------------------
@@ -145,9 +155,9 @@ class timeline {
 
 		band.g = frame.append("g")
 			.attr("class", "band")
-			.attr("transform", "translate(0," + vis.h + ")");
+			.attr("transform", `translate(0,${vis.h})`);
 
-		var items = band.g.selectAll("g")
+		let items = band.g.selectAll("g")
 			.data(data.alignment)
 			.enter()
 			.append("g")
@@ -173,7 +183,7 @@ class timeline {
 		
 		group = band.g.append("g")
 		        .attr("class", "navigator-controller")
-		        .attr("transform", "translate(" + (width / 2 - maskWidth / 2) + ",0)");
+		        .attr("transform", `translate(${width / 2 - maskWidth / 2},0)`);
 
         mask = group.append("rect")
         		.attr("class", "navigator-mask")
@@ -182,6 +192,7 @@ class timeline {
         		// .style("cursor", "pointer")
         		.attr("width", maskWidth)
         		.attr("height", band.h)
+				.attr("transform", "translate(0,0)")
         		.on("mousedown", selectElement);
         
         leftControl = group.append("rect")
@@ -203,7 +214,7 @@ class timeline {
         				.attr("width", 5)
         				.attr("height", 25)
         				// .style("cursor", "pointer")
-        				.attr("transform", "translate(97.5,12.5)")
+        				.attr("transform",`translate(${maskWidth - 2.5},12.5)`)
         				.on("mousedown", selectElement);
 
 		// -------------------------------------------------------------------------------------
@@ -213,14 +224,40 @@ class timeline {
 					.append("div")
 					.attr("class", "tooltip")
 					.style("opacity", 0);
-
 	}
+}
 
+function zoomed(){
+	console.log(d3.event.transform);
+	// Get the scale and translate before zoom
+	let ctrl1 = leftControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
+		ctrl2 = rightControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
+		groupX = group._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
+	    currentScale = d3.event.transform.k,
+		maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5,
+		maskWidth0 = maskWidth;
+	// Change after zoom
+	maskWidth = parseFloat(width / currentScale);
+	let maskWidthChanged = maskWidth0 - maskWidth;
+	maskX = parseFloat(groupX) + maskX < 0 ? (-1) * parseFloat(groupX) : parseFloat(groupX) + maskX + maskWidth > width ? maskX + maskWidthChanged : maskX + maskWidthChanged / 2;
+	ctrl1 = maskX - 2.5;
+	ctrl2 = maskX + maskWidth - 2.5;
+	leftControl._groups[0][0].setAttribute("transform", `translate(${ctrl1}, 12.5)`);
+	rightControl._groups[0][0].setAttribute("transform", `translate(${ctrl2}, 12.5)`);
+	mask._groups[0][0].setAttribute("transform", `translate(${maskX},0)`);
+	mask._groups[0][0].setAttribute("width", `${maskWidth}`);
+	// Change display area
+	maskRate = maskWidth / width;
+	dataVisible = maskRate * dataLength;
+	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	scale = width / (maskRate * dataLength);
+	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
 }
 
 function selectElement() {
 	//console.log(this); // dom
-	console.log("select");
+	click = true;
+	console.log(d3.event);
 	selectedElement = d3.select(this); // object
 	currentX = d3.event.clientX; // event.x
 
@@ -234,10 +271,10 @@ function selectElement() {
  	else { 						// group move
     	moveTarget = this.parentNode;
  	}
-
- 	selectedElement.on("mousemove", moveElement);
-	selectedElement.on("mouseout", deselectElement);
-	selectedElement.on("mouseup", deselectElement);
+	
+ 	d3.select("#svg").on("mousemove", moveElement);
+	// d3.select("#svg").on("mouseout", deselectElement);
+	d3.select("#svg").on("mouseup", deselectElement);
 }
 
 function moveElement() {
@@ -247,12 +284,15 @@ function moveElement() {
 		// currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 927.5 ? 927.5 - groupX : dx)); // limit boundary
 		currentAxis[0] = dx;
 		// console.log(dx);
+		// syncronize zoom scale
+		d3.select(".visbackground")
+			.call(zoom.transform, d3.zoomIdentity
+			.scale(width / maskWidth));
 	}
 	else {
-		if (this.getAttribute("transform")!=null) {
-			var maskTrans = parseFloat(this.getAttribute("transform").slice(10, -1).split(',')[0]);
-			console.log(maskTrans);
-			currentAxis[0] = (d3.event.clientX - currentX + parseFloat(currentAxis[0]) < 0 ? 0 : (d3.event.clientX - currentX + parseFloat(currentAxis[0])) > (width - maskWidth - maskTrans) ? (width - maskWidth - maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]));  
+		if (selectedElement._groups[0][0].getAttribute("transform")!=null) {
+			var maskTrans = parseFloat(selectedElement._groups[0][0].getAttribute("transform").slice(10, -1).split(',')[0]);
+			currentAxis[0] = (d3.event.clientX - currentX + parseFloat(currentAxis[0]) + parseFloat(maskTrans) < 0 ? 0 - parseFloat(maskTrans) : (d3.event.clientX - currentX + parseFloat(currentAxis[0])) > (width - maskWidth - maskTrans) ? (width - maskWidth - maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]));  
 	}
 		// currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance;
 	}
@@ -274,13 +314,15 @@ function moveElement() {
 	dataVisible = maskRate * dataLength;
 	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
 	scale = width / (maskRate * dataLength);
-	vis.g._groups[0][0].childNodes[0].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
+	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
 }
 
 function deselectElement() {
-	selectedElement.on("mousemove", null);
-	selectedElement.on("mouseout", null);
-	selectedElement.on("mouseup", null);
+	if(d3.event.type == 'mouseout' && click) return;
+	click = false;
+	d3.select("#svg").on("mousemove", null);
+	d3.select("#svg").on("mouseout", null);
+	d3.select("#svg").on("mouseup", null);
 }
 
 module.exports = timeline

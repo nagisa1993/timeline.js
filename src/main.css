@@ -4,6 +4,7 @@
 }
 .visbackground, .bandbackground {
     fill: none;
+    pointer-events: all;
 }
 
 .zoom {

@@ -16812,6 +16812,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var vis = {},
     band = {},
     rate = {};
+var click = false;
 var group = null;
 var mask = null;
 var leftControl = null;
@@ -16824,6 +16825,7 @@ var selectedElement,
     currentX = 0,
     currentAxis = 0,
     dx,
+    currentPosition = 0,
     dataLength = 0,
     dataVisible,
     dataInvisible,
@@ -16831,7 +16833,9 @@ var selectedElement,
     scale,
     groupX = 150,
     maskX = 0,
-    maskWidth = 100;
+    maskWidth = 930;
+
+var zoom = d3.zoom().scaleExtent([1, Infinity]).translateExtent([[0, 0], [100, 100]]).extent([[0, 0], [100, 100]]).on("zoom", zoomed);
 var margin = { top: 10, right: 10, bottom: 10, left: 10 },
     outerWidth = 950,
     outerHeight = 500,
@@ -16862,7 +16866,7 @@ var timeline = function () {
 			rate.w = width / dataLength;
 			rate.h = band.h / vis.h;
 
-			var svg = d3.select(dom).append("svg").attr("id", "svg").attr("width", outerWidth).attr("height", outerHeight).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			var svg = d3.select(dom).append("svg").attr("id", "svg").attr("width", outerWidth).attr("height", outerHeight).append("g").attr("transform", 'translate(' + margin.left + ',' + margin.top + ')');
 
 			var clipPath = svg.append("defs").append("clipPath").attr("id", "display").append("rect")
 			// .attr("x", 0)
@@ -16870,6 +16874,7 @@ var timeline = function () {
 			.attr("width", width).attr("height", height).style("fill", "none");
 
 			var frame = svg.append("g").attr("id", "frame").attr("clip-path", "url(#display)");
+
 			// -------------------------------------------------------------------------------------
 			// visualization frame
 
@@ -16878,11 +16883,12 @@ var timeline = function () {
 			console.log(initTrans);
 
 			vis.g = frame.append("g").attr("class", "visband");
+
+			vis.g.append("rect").attr("class", "visbackground").attr("width", vis.w).attr("height", vis.h).call(zoom);
+
 			vis.g.append("g").attr("class", "data-series")
 			// .attr("transform", "scale(3.71428,1) translate(-161.53846,0)");
-			.attr("transform", "scale(" + initScale + ",1) translate(" + initTrans + ",0)");
-
-			vis.g.append("rect").attr("class", "visbackground").attr("width", vis.w).attr("height", vis.h);
+			.attr("transform", 'scale(' + initScale + ',1) translate(' + initTrans + ',0)');
 
 			strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
 			console.log(strokeWidth);
@@ -16901,7 +16907,7 @@ var timeline = function () {
 				}).on("mouseover", function (d) {
 					// tooltip
 					tooltipDiv.transition().duration(200).style("opacity", .9);
-					tooltipDiv.html("Case ID: " + alignment.ID[0].seq + "<br>" + "duration: " + d.Duration).style("left", d3.event.pageX + "px").style("top", d3.event.pageY - 28 + "px");;
+					tooltipDiv.html('Case ID: ' + alignment.ID[0].seq + '<br>duration: ' + d.Duration).style("left", d3.event.pageX + "px").style("top", d3.event.pageY - 28 + "px");;
 				}).on("mouseout", function (d) {
 					tooltipDiv.transition().duration(500).style("opacity", 0);
 				});
@@ -16910,23 +16916,23 @@ var timeline = function () {
 			// -------------------------------------------------------------------------------------
 			// axis
 
-			var axis1 = frame.append("g").attr("class", "axis").attr("transform", "translate(0," + vis.h + ")");
+			var axis1 = frame.append("g").attr("class", "axis").attr("transform", 'translate(0,' + vis.h + ')');
 
 			axis1.append("path")
 			// .attr("d", "M 5 100 L 395 100")
-			.attr("d", "M0,0V0H" + width + "V0").attr("stroke", "#e6e6e6");
+			.attr("d", 'M0,0V0H' + width + 'V0').attr("stroke", "#e6e6e6");
 
-			var axis2 = frame.append("g").attr("class", "axis").attr("transform", "translate(0," + (vis.h + 50) + ")");
+			var axis2 = frame.append("g").attr("class", "axis").attr("transform", 'translate(0,' + (vis.h + 50) + ')');
 			axis2.append("path")
 			// .attr("d", "M 5 150 L 395 150")	
-			.attr("d", "M0,0V0H" + width + "V0").attr("stroke", "#e6e6e6");
+			.attr("d", 'M0,0V0H' + width + 'V0').attr("stroke", "#e6e6e6");
 
 			// -------------------------------------------------------------------------------------
 			// band
 
 			bandStrokeWidth = band.h * strokeWidth / vis.h;
 
-			band.g = frame.append("g").attr("class", "band").attr("transform", "translate(0," + vis.h + ")");
+			band.g = frame.append("g").attr("class", "band").attr("transform", 'translate(0,' + vis.h + ')');
 
 			var items = band.g.selectAll("g").data(data.alignment).enter().append("g").each(function (alignment, i) {
 				d3.select(this).selectAll("path").data(alignment.value).enter().append("path").attr("stroke", "rgb(102,133,194)").attr("stroke-width", bandStrokeWidth).attr("d", function (activity, j) {
@@ -16936,13 +16942,13 @@ var timeline = function () {
 
 			band.g.append("rect").attr("class", "bandbackground").attr("width", vis.w).attr("height", band.h);
 
-			group = band.g.append("g").attr("class", "navigator-controller").attr("transform", "translate(" + (width / 2 - maskWidth / 2) + ",0)");
+			group = band.g.append("g").attr("class", "navigator-controller").attr("transform", 'translate(' + (width / 2 - maskWidth / 2) + ',0)');
 
 			mask = group.append("rect").attr("class", "navigator-mask")
 			// .style("fill", "rgba(102,133,194,0.3)")
 			// .attr("transform", "translate(0,100)")
 			// .style("cursor", "pointer")
-			.attr("width", maskWidth).attr("height", band.h).on("mousedown", selectElement);
+			.attr("width", maskWidth).attr("height", band.h).attr("transform", "translate(0,0)").on("mousedown", selectElement);
 
 			leftControl = group.append("rect").attr("class", "mask-controller").attr("stroke", "#cccccc").attr("stroke-width", 1)
 			// .style("fill", "#e6e6e6")
@@ -16954,7 +16960,7 @@ var timeline = function () {
 			// .style("fill", "#e6eß6e6")
 			.attr("width", 5).attr("height", 25)
 			// .style("cursor", "pointer")
-			.attr("transform", "translate(97.5,12.5)").on("mousedown", selectElement);
+			.attr("transform", 'translate(' + (maskWidth - 2.5) + ',12.5)').on("mousedown", selectElement);
 
 			// -------------------------------------------------------------------------------------
 			// tooltip
@@ -16966,9 +16972,37 @@ var timeline = function () {
 	return timeline;
 }();
 
+function zoomed() {
+	console.log(d3.event.transform);
+	// Get the scale and translate before zoom
+	var ctrl1 = leftControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
+	    ctrl2 = rightControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
+	    groupX = group._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
+	    currentScale = d3.event.transform.k,
+	    maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5,
+	    maskWidth0 = maskWidth;
+	// Change after zoom
+	maskWidth = parseFloat(width / currentScale);
+	var maskWidthChanged = maskWidth0 - maskWidth;
+	maskX = parseFloat(groupX) + maskX < 0 ? -1 * parseFloat(groupX) : parseFloat(groupX) + maskX + maskWidth > width ? maskX + maskWidthChanged : maskX + maskWidthChanged / 2;
+	ctrl1 = maskX - 2.5;
+	ctrl2 = maskX + maskWidth - 2.5;
+	leftControl._groups[0][0].setAttribute("transform", 'translate(' + ctrl1 + ', 12.5)');
+	rightControl._groups[0][0].setAttribute("transform", 'translate(' + ctrl2 + ', 12.5)');
+	mask._groups[0][0].setAttribute("transform", 'translate(' + maskX + ',0)');
+	mask._groups[0][0].setAttribute("width", '' + maskWidth);
+	// Change display area
+	maskRate = maskWidth / width;
+	dataVisible = maskRate * dataLength;
+	dataInvisible = -1 * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	scale = width / (maskRate * dataLength);
+	vis.g._groups[0][0].childNodes[1].setAttribute("transform", 'scale(' + scale + ',' + 1 + ') translate(' + dataInvisible + ',' + 0 + ')');
+}
+
 function selectElement() {
 	//console.log(this); // dom
-	console.log("select");
+	click = true;
+	console.log(d3.event);
 	selectedElement = d3.select(this); // object
 	currentX = d3.event.clientX; // event.x
 
@@ -16984,9 +17018,9 @@ function selectElement() {
 		moveTarget = this.parentNode;
 	}
 
-	selectedElement.on("mousemove", moveElement);
-	selectedElement.on("mouseout", deselectElement);
-	selectedElement.on("mouseup", deselectElement);
+	d3.select("#svg").on("mousemove", moveElement);
+	// d3.select("#svg").on("mouseout", deselectElement);
+	d3.select("#svg").on("mouseup", deselectElement);
 }
 
 function moveElement() {
@@ -16996,15 +17030,14 @@ function moveElement() {
 		// currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 927.5 ? 927.5 - groupX : dx)); // limit boundary
 		currentAxis[0] = dx;
 		// console.log(dx);
+		// syncronize zoom scale
+		d3.select(".visbackground").call(zoom.transform, d3.zoomIdentity.scale(width / maskWidth));
 	} else {
-		console.log(d3.event.clientX - currentX + parseFloat(currentAxis[0]));
-		console.log(width - maskWidth);
-		if (this.getAttribute("transform") != null) {
-			var maskTrans = parseFloat(this.getAttribute("transform").slice(10, -1).split(',')[0]);
-			console.log(maskTrans);
-			currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]) < 0 ? 0 : d3.event.clientX - currentX + parseFloat(currentAxis[0]) > width - maskWidth - maskTrans ? width - maskWidth - maskTrans : d3.event.clientX - currentX + parseFloat(currentAxis[0]);
+		if (selectedElement._groups[0][0].getAttribute("transform") != null) {
+			var maskTrans = parseFloat(selectedElement._groups[0][0].getAttribute("transform").slice(10, -1).split(',')[0]);
+			currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]) + parseFloat(maskTrans) < 0 ? 0 - parseFloat(maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]) > width - maskWidth - maskTrans ? width - maskWidth - maskTrans : d3.event.clientX - currentX + parseFloat(currentAxis[0]);
 		}
-		// currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance; maskWidth = 100;
+		// currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance;
 	}
 
 	moveTarget.setAttribute("transform", 'translate(' + currentAxis.join(',') + ')');
@@ -17024,13 +17057,15 @@ function moveElement() {
 	dataVisible = maskRate * dataLength;
 	dataInvisible = -1 * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
 	scale = width / (maskRate * dataLength);
-	vis.g._groups[0][0].childNodes[0].setAttribute("transform", 'scale(' + scale + ',' + 1 + ') translate(' + dataInvisible + ',' + 0 + ')');
+	vis.g._groups[0][0].childNodes[1].setAttribute("transform", 'scale(' + scale + ',' + 1 + ') translate(' + dataInvisible + ',' + 0 + ')');
 }
 
 function deselectElement() {
-	selectedElement.on("mousemove", null);
-	selectedElement.on("mouseout", null);
-	selectedElement.on("mouseup", null);
+	if (d3.event.type == 'mouseout' && click) return;
+	click = false;
+	d3.select("#svg").on("mousemove", null);
+	d3.select("#svg").on("mouseout", null);
+	d3.select("#svg").on("mouseup", null);
 }
 
 module.exports = timeline;
@@ -17044,7 +17079,7 @@ exports = module.exports = __webpack_require__(4)(undefined);
 
 
 // module
-exports.push([module.i, "#svg {\n    border: 1px solid #e6e6e6;\n    background-color: #fdfdfd;\n}\n.visbackground, .bandbackground {\n    fill: none;\n}\n\n.zoom {\n  cursor: move;\n  fill: none;\n  pointer-events: all;\n}\n\n.tooltip {\t\n    position: absolute;\t\t\t\n    text-align: left;\t\t\t\n    width: 120px;\t\t\t\t\t\n    height: 28px;\t\t\t\t\t\n    padding: 8px;\t\t\t\t\n    font: 12px sans-serif;\t\t\n    background: lightsteelblue;\t\n    border: 0px;\t\t\n    border-radius: 6px;\t\t\t\n    pointer-events: none;\t\t\t\n}\n\n.navigator-mask {\n    cursor: move;\n    fill: rgba(102,133,194,0.3);\n}\n\n.mask-controller {\n    fill: #e6e6e6;\n    cursor: ew-resize;\n}", ""]);
+exports.push([module.i, "#svg {\n    border: 1px solid #e6e6e6;\n    background-color: #fdfdfd;\n}\n.visbackground, .bandbackground {\n    fill: none;\n    pointer-events: all;\n}\n\n.zoom {\n  cursor: move;\n  fill: none;\n  pointer-events: all;\n}\n\n.tooltip {\t\n    position: absolute;\t\t\t\n    text-align: left;\t\t\t\n    width: 120px;\t\t\t\t\t\n    height: 28px;\t\t\t\t\t\n    padding: 8px;\t\t\t\t\n    font: 12px sans-serif;\t\t\n    background: lightsteelblue;\t\n    border: 0px;\t\t\n    border-radius: 6px;\t\t\t\n    pointer-events: none;\t\t\t\n}\n\n.navigator-mask {\n    cursor: move;\n    fill: rgba(102,133,194,0.3);\n}\n\n.mask-controller {\n    fill: #e6e6e6;\n    cursor: ew-resize;\n}", ""]);
 
 // exports
 

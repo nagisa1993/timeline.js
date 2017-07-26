@@ -6,37 +6,89 @@
 </head>
 <body>
 	<div id="editor"></div>
-
+	<div id="upload">
+		<input type="file" id="fileUpload" accept=".csv" />
+		<button type="button" id="confirm" onclick="csvtoJson()">Parse Data</button>
+	</div>
 	<script type="text/javascript">
 		var dom = document.getElementById("editor");
 		var timeline = new timeline(dom);
-		var data = {"scale":1092, "alignment":[{"Height":2,"ID":[{"seq":"2014001"}],"value":[
+		var data = {"scale":1092, "alignment":[{"Height":3,"ID":[{"seq":"2014001"}],"value":[
 	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":0},
 	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":1},
+	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":2},
 	{"EndTime":83,"StartTime":68,"Duration":15,"Subrow":0},
+	{"EndTime":85,"StartTime":68,"Duration":15,"Subrow":1},
+	{"EndTime":92,"StartTime":73,"Duration":15,"Subrow":2},
 	{"EndTime":109,"StartTime":108,"Duration":1,"Subrow":0},
+	{"EndTime":125,"StartTime":116,"Duration":1,"Subrow":1},
+	{"EndTime":122,"StartTime":110,"Duration":1,"Subrow":2},
 	{"EndTime":368,"StartTime":359,"Duration":9,"Subrow":0},
+	{"EndTime":389,"StartTime":377,"Duration":9,"Subrow":1},
+	{"EndTime":381,"StartTime":369,"Duration":9,"Subrow":1},
 	{"EndTime":404,"StartTime":403,"Duration":1,"Subrow":0},
 	{"EndTime":440,"StartTime":439,"Duration":1,"Subrow":0},
 	{"EndTime":482,"StartTime":470,"Duration":12,"Subrow":0},
+	{"EndTime":621,"StartTime":579,"Duration":1,"Subrow":1},
 	{"EndTime":512,"StartTime":496,"Duration":16,"Subrow":0},
 	{"EndTime":593,"StartTime":592,"Duration":1,"Subrow":0},
+	{"EndTime":685,"StartTime":670,"Duration":16,"Subrow":1},
+	{"EndTime":621,"StartTime":594,"Duration":1,"Subrow":2},
 	{"EndTime":651,"StartTime":619,"Duration":32,"Subrow":0}
 ]},
-{"Height":1,"ID":[{"seq":"2014002"}],"value":[
+{"Height":2,"ID":[{"seq":"2014002"}],"value":[
 	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":0},
+	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":1},
 	{"EndTime":31,"StartTime":19,"Duration":12,"Subrow":0},
+	{"EndTime":35,"StartTime":23,"Duration":1,"Subrow":1},
 	{"EndTime":35,"StartTime":34,"Duration":1,"Subrow":0},
 	{"EndTime":65,"StartTime":64,"Duration":1,"Subrow":0},
+	{"EndTime":66,"StartTime":63,"Duration":1,"Subrow":1},
 	{"EndTime":423,"StartTime":422,"Duration":1,"Subrow":0},
 	{"EndTime":484,"StartTime":483,"Duration":1,"Subrow":0},
+	{"EndTime":481,"StartTime":480,"Duration":1,"Subrow":1},
 	{"EndTime":708,"StartTime":707,"Duration":1,"Subrow":0},
 	{"EndTime":858,"StartTime":857,"Duration":1,"Subrow":0},
 	{"EndTime":932,"StartTime":920,"Duration":12,"Subrow":0},
 	{"EndTime":943,"StartTime":937,"Duration":6,"Subrow":0},
 	{"EndTime":959,"StartTime":956,"Duration":3,"Subrow":0},
 	{"EndTime":1092,"StartTime":1037,"Duration":55,"Subrow":0}]}]};
-		timeline.draw(data);
+	timeline.draw(data);
+// Read .csv file 
+	function csvtoJson(id){
+		var file = document.getElementById("fileUpload").files[0];
+		var reader = new FileReader();
+		reader.onload = function (e) {
+			var texto = e.target.result;
+			sampleJson = JSON.parse(csvJSON(texto));
+			console.log(sampleJson[1]);
+		};
+		reader.readAsText(file);
+		}
+
+	function csvJSON(csv) {
+		var lines = csv.split("\n");
+		var result = [];
+		var headers;
+		for (var i = 0; i < lines.length; i++) {
+			headers = lines[i].split("\n");
+		}
+		var cont = 0;
+		for (var i = 0; i < lines.length; i++) {
+
+			var obj = {};
+			var currentline = lines[i].split("\n");
+			for (var j = 0; j < headers.length; j++) {
+				obj[cont] = currentline[j];
+			}
+			cont++;
+			result.push(obj);
+		}
+
+		return JSON.stringify(result); //JSON
+	}
+
+		
 	</script>
 </body>
 </html>

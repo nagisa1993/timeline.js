@@ -1,10 +1,15 @@
 #svg {
     border: 1px solid #e6e6e6;
-    background-color: #fdfdfd;
+    background-color: #ffffff;
 }
-.visbackground, .bandbackground {
-    fill: none;
+
+.visbackground {
+    fill: #fcfcfc;
     pointer-events: all;
+}
+
+.bandbackground {
+    fill: #fdfdfd;
 }
 
 .zoom {

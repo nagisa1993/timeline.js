@@ -16866,7 +16866,7 @@ var timeline = function () {
 			rate.w = width / dataLength;
 			rate.h = band.h / vis.h;
 
-			var svg = d3.select(dom).append("svg").attr("id", "svg").attr("width", outerWidth).attr("height", outerHeight).append("g").attr("transform", 'translate(' + margin.left + ',' + margin.top + ')');
+			var svg = d3.select(dom).append("svg").attr("id", "svg").attr("width", outerWidth).attr("height", outerHeight).append("g").attr("class", "background").attr("transform", 'translate(' + margin.left + ',' + margin.top + ')');
 
 			var clipPath = svg.append("defs").append("clipPath").attr("id", "display").append("rect")
 			// .attr("x", 0)
@@ -16880,7 +16880,6 @@ var timeline = function () {
 
 			var initScale = width / (maskWidth / width * dataLength);
 			var initTrans = -1 * (width / 2 - maskWidth / 2) * dataLength / width;
-			console.log(initTrans);
 
 			vis.g = frame.append("g").attr("class", "visband");
 
@@ -16891,19 +16890,19 @@ var timeline = function () {
 			.attr("transform", 'scale(' + initScale + ',1) translate(' + initTrans + ',0)');
 
 			strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
-			console.log(strokeWidth);
 
 			// -------------------------------------------------------------------------------------
 			// data
-
+			var totalHeight = 0;
 			var visItems = d3.select(".data-series").selectAll("g").data(data.alignment).enter().append("g")
 			//.each(test);
 			.each(function (alignment, i) {
 				// 这里不能用arrow function写，否则this就会读错为整体的dom
 				// can't use arrow function here
-				d3.select(this).selectAll("path").data(alignment.value).enter().append("path").attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取 // you can set attr for stroke from colormap
+				d3.select(this).selectAll("path").data(alignment.value).enter().append("path").attr("stroke", 'rgb(' + i + '02,133,194)') // 颜色可以从colormap里取 // you can set attr for stroke from colormap
 				.attr("stroke-width", strokeWidth).attr("d", function (activity, j) {
-					return 'M ' + activity.StartTime + ' ' + strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) + ' L ' + activity.EndTime + ' ' + strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow);
+					// return `M ${activity.StartTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)}`;
+					return 'M ' + activity.StartTime + ' ' + strokeWidth * (totalHeight + intervalRate * (i + 1) + activity.Subrow) + ' L ' + activity.EndTime + ' ' + strokeWidth * (totalHeight + intervalRate * (i + 1) + activity.Subrow);
 				}).on("mouseover", function (d) {
 					// tooltip
 					tooltipDiv.transition().duration(200).style("opacity", .9);
@@ -16911,6 +16910,7 @@ var timeline = function () {
 				}).on("mouseout", function (d) {
 					tooltipDiv.transition().duration(500).style("opacity", 0);
 				});
+				totalHeight += alignment.Height;
 			});
 
 			// -------------------------------------------------------------------------------------
@@ -16934,13 +16934,16 @@ var timeline = function () {
 
 			band.g = frame.append("g").attr("class", "band").attr("transform", 'translate(0,' + vis.h + ')');
 
+			band.g.append("rect").attr("class", "bandbackground").attr("width", vis.w).attr("height", band.h);
+
+			var totalHeight2 = 0;
 			var items = band.g.selectAll("g").data(data.alignment).enter().append("g").each(function (alignment, i) {
 				d3.select(this).selectAll("path").data(alignment.value).enter().append("path").attr("stroke", "rgb(102,133,194)").attr("stroke-width", bandStrokeWidth).attr("d", function (activity, j) {
-					return 'M ' + activity.StartTime * rate.w + ' ' + strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) * rate.h + ' L ' + activity.EndTime * rate.w + ' ' + strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) * rate.h;
+					console.log(bandStrokeWidth);
+					return 'M ' + activity.StartTime * rate.w + ' ' + strokeWidth * (totalHeight2 + intervalRate * (i + 1) + activity.Subrow) * rate.h + ' L ' + activity.EndTime * rate.w + ' ' + strokeWidth * (totalHeight2 + intervalRate * (i + 1) + activity.Subrow) * rate.h;
 				});
+				totalHeight2 += alignment.Height;
 			});
-
-			band.g.append("rect").attr("class", "bandbackground").attr("width", vis.w).attr("height", band.h);
 
 			group = band.g.append("g").attr("class", "navigator-controller").attr("transform", 'translate(' + (width / 2 - maskWidth / 2) + ',0)');
 
@@ -17079,7 +17082,7 @@ exports = module.exports = __webpack_require__(4)(undefined);
 
 
 // module
-exports.push([module.i, "#svg {\n    border: 1px solid #e6e6e6;\n    background-color: #fdfdfd;\n}\n.visbackground, .bandbackground {\n    fill: none;\n    pointer-events: all;\n}\n\n.zoom {\n  cursor: move;\n  fill: none;\n  pointer-events: all;\n}\n\n.tooltip {\t\n    position: absolute;\t\t\t\n    text-align: left;\t\t\t\n    width: 120px;\t\t\t\t\t\n    height: 28px;\t\t\t\t\t\n    padding: 8px;\t\t\t\t\n    font: 12px sans-serif;\t\t\n    background: lightsteelblue;\t\n    border: 0px;\t\t\n    border-radius: 6px;\t\t\t\n    pointer-events: none;\t\t\t\n}\n\n.navigator-mask {\n    cursor: move;\n    fill: rgba(102,133,194,0.3);\n}\n\n.mask-controller {\n    fill: #e6e6e6;\n    cursor: ew-resize;\n}", ""]);
+exports.push([module.i, "#svg {\n    border: 1px solid #e6e6e6;\n    background-color: #ffffff;\n}\n\n.visbackground {\n    fill: #fcfcfc;\n    pointer-events: all;\n}\n\n.bandbackground {\n    fill: #fdfdfd;\n}\n\n.zoom {\n  cursor: move;\n  fill: none;\n  pointer-events: all;\n}\n\n.tooltip {\t\n    position: absolute;\t\t\t\n    text-align: left;\t\t\t\n    width: 120px;\t\t\t\t\t\n    height: 28px;\t\t\t\t\t\n    padding: 8px;\t\t\t\t\n    font: 12px sans-serif;\t\t\n    background: lightsteelblue;\t\n    border: 0px;\t\t\n    border-radius: 6px;\t\t\t\n    pointer-events: none;\t\t\t\n}\n\n.navigator-mask {\n    cursor: move;\n    fill: rgba(102,133,194,0.3);\n}\n\n.mask-controller {\n    fill: #e6e6e6;\n    cursor: ew-resize;\n}", ""]);
 
 // exports
 

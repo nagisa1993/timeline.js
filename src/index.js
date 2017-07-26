@@ -49,6 +49,7 @@ class timeline {
 			        .attr("width", outerWidth)
 			        .attr("height", outerHeight)
 					.append("g")
+					.attr("class", "background")
 					.attr("transform", `translate(${margin.left},${margin.top})`);
 
 		const clipPath = svg.append("defs")
@@ -70,7 +71,6 @@ class timeline {
 		
 		const initScale = width / (maskWidth / width * dataLength);
 		const initTrans = (-1) * (width / 2 - maskWidth / 2 ) * dataLength / width; 
-		console.log(initTrans);
 
 		vis.g = frame.append("g")
 					.attr("class", "visband");
@@ -88,11 +88,10 @@ class timeline {
 
 
 		strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
-		console.log(strokeWidth);
 
 		// -------------------------------------------------------------------------------------
 		// data
-
+		let totalHeight = 0;
 		let visItems = d3.select(".data-series").selectAll("g")
 			.data(data.alignment)
 			.enter()
@@ -106,10 +105,11 @@ class timeline {
 					  .data(alignment.value)
 					  .enter()
 					  	.append("path")
-					  	.attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取 // you can set attr for stroke from colormap
+					  	.attr("stroke", `rgb(${i}02,133,194)`) // 颜色可以从colormap里取 // you can set attr for stroke from colormap
 					  	.attr("stroke-width", strokeWidth)
 					  	.attr("d", (activity, j) => {
-					  		return `M ${activity.StartTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)}`;
+					  		// return `M ${activity.StartTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)}`;
+							return `M ${activity.StartTime} ${strokeWidth * (totalHeight +  intervalRate * (i + 1) + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (totalHeight +  intervalRate * (i + 1) + activity.Subrow)}`;
 					  	})
 						.on("mouseover", function(d) { // tooltip
 							tooltipDiv.transition()
@@ -124,6 +124,7 @@ class timeline {
 									  .duration(500)
 									  .style("opacity", 0);
 						})
+						totalHeight += alignment.Height;
 				});
 
 				
@@ -157,6 +158,12 @@ class timeline {
 			.attr("class", "band")
 			.attr("transform", `translate(0,${vis.h})`);
 
+		band.g.append("rect")
+			.attr("class", "bandbackground")
+			.attr("width", vis.w)
+			.attr("height", band.h);
+
+		let totalHeight2 = 0;
 		let items = band.g.selectAll("g")
 			.data(data.alignment)
 			.enter()
@@ -170,16 +177,11 @@ class timeline {
 				.attr("stroke", "rgb(102,133,194)")
 				.attr("stroke-width", bandStrokeWidth)
 				.attr("d", (activity, j) => {
-					return `M ${activity.StartTime * rate.w} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow) * rate.h}`
+					console.log(bandStrokeWidth);
+					return `M ${activity.StartTime * rate.w} ${strokeWidth * (totalHeight2 +  intervalRate * (i + 1) + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${strokeWidth * (totalHeight2 +  intervalRate * (i + 1) + activity.Subrow) * rate.h}`
 				})
-
+				totalHeight2 += alignment.Height;
 			})
-
-
-		band.g.append("rect")
-			.attr("class", "bandbackground")
-			.attr("width", vis.w)
-			.attr("height", band.h);
 		
 		group = band.g.append("g")
 		        .attr("class", "navigator-controller")

@@ -177,7 +177,6 @@ class timeline {
 				.attr("stroke", "rgb(102,133,194)")
 				.attr("stroke-width", bandStrokeWidth)
 				.attr("d", (activity, j) => {
-					console.log(bandStrokeWidth);
 					return `M ${activity.StartTime * rate.w} ${strokeWidth * (totalHeight2 +  intervalRate * (i + 1) + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${strokeWidth * (totalHeight2 +  intervalRate * (i + 1) + activity.Subrow) * rate.h}`
 				})
 				totalHeight2 += alignment.Height;

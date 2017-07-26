@@ -16858,6 +16858,7 @@ var timeline = function () {
 
 			dataLength = data.scale;
 			console.log(dataLength);
+			console.log("server");
 
 			band.h = 50; // band height
 			vis.w = width;

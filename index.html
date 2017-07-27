@@ -3,17 +3,14 @@
 <head>
 	<title>timeline library test demo</title>
 	<script src="dist/timeline.js"></script>
+	<script src="http://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 </head>
 <body>
 	<div id="editor"></div>
-	<div id="upload">
-		<input type="file" id="fileUpload" accept=".csv" />
-		<button type="button" id="confirm" onclick="csvtoJson()">Parse Data</button>
-	</div>
 	<script type="text/javascript">
 		var dom = document.getElementById("editor");
 		var timeline = new timeline(dom);
-		var data = {"scale":1092, "alignment":[{"Height":3,"ID":[{"seq":"2014001"}],"value":[
+		var dataset = {"scale":1092, "alignment":[{"Height":3,"ID":[{"seq":"2014001"}],"value":[
 	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":0},
 	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":1},
 	{"EndTime":1,"StartTime":0,"Duration":1,"Subrow":2},
@@ -53,42 +50,70 @@
 	{"EndTime":943,"StartTime":937,"Duration":6,"Subrow":0},
 	{"EndTime":959,"StartTime":956,"Duration":3,"Subrow":0},
 	{"EndTime":1092,"StartTime":1037,"Duration":55,"Subrow":0}]}]};
-	timeline.draw(data);
-// Read .csv file 
-	function csvtoJson(id){
-		var file = document.getElementById("fileUpload").files[0];
-		var reader = new FileReader();
-		reader.onload = function (e) {
-			var texto = e.target.result;
-			sampleJson = JSON.parse(csvJSON(texto));
-			console.log(sampleJson[1]);
-		};
-		reader.readAsText(file);
-		}
+	timeline.draw(dataset);
 
-	function csvJSON(csv) {
+// Read .csv file 
+	$.ajax({
+		type: "GET",
+		url: '101cases.csv',
+		dataType: 'text',
+		success: function(data) {parseData(data);}
+	});
+
+	function parseData(csv) {
+		// Parse .csv file
 		var lines = csv.split("\n");
 		var result = [];
-		var headers;
-		for (var i = 0; i < lines.length; i++) {
-			headers = lines[i].split("\n");
-		}
-		var cont = 0;
-		for (var i = 0; i < lines.length; i++) {
-
+		for (var i = 1; i < lines.length; i++) {
 			var obj = {};
-			var currentline = lines[i].split("\n");
-			for (var j = 0; j < headers.length; j++) {
-				obj[cont] = currentline[j];
-			}
-			cont++;
+			var contents = lines[i].split(",");
+			obj.seq = contents[0];
+			obj.activity = contents[1];
+			var time = contents[2].split(":");
+			obj.StartTime = (+time[0]) * 60 * 60 + (+time[1]) * 60 + (+time[2]);
+			var time = contents[3].split(":");
+			obj.EndTime = (+time[0]) * 60 * 60 + (+time[1]) * 60 + (+time[2]);
 			result.push(obj);
 		}
+		console.log(result);
 
-		return JSON.stringify(result); //JSON
-	}
-
+		var data = {};
+		// Find the scale
+		var scale = 0;
+		for (var i = 0; i < result.length; i++) scale = scale < result[i].EndTime ? result[i].EndTime : scale;
+		data.scale = scale;
+		// Alignment
+		var alignment = [],
+			alignObj = {},
+			ID = [],
+			value = [];
+		for (var i = 0; i < result.length; i++) {
+			if (i == 0) {
+				ID.push({"seq":result[i].seq});
+				alignObj.ID = ID;
+				value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity});
+			} else {
+				if (result[i].seq===result[i - 1].seq) value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity});
+				else {
+					alignObj.value = value;
+					alignment.push(alignObj);
+					alignObj = {};
+					value = [];
+					ID = [];
+					ID.push({"seq":result[i].seq});
+					alignObj.ID = ID;
+					value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity});
+				}
+			}
+		}
+		alignObj.value = value;
+		alignment.push(alignObj);
+		data.alignment = alignment;
+		// Detect overlaps and set subrows & heights
 		
+
+		console.log(data);
+	}
 	</script>
 </body>
 </html>

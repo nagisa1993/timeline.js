@@ -105,7 +105,7 @@ class timeline {
 					  .data(alignment.value)
 					  .enter()
 					  	.append("path")
-					  	.attr("stroke", `rgb(${i}02,133,194)`) // 颜色可以从colormap里取 // you can set attr for stroke from colormap
+					  	.attr("stroke", `rgb(102,133,194)`) // 颜色可以从colormap里取 // you can set attr for stroke from colormap
 					  	.attr("stroke-width", strokeWidth)
 					  	.attr("d", (activity, j) => {
 					  		// return `M ${activity.StartTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)}`;
@@ -115,7 +115,7 @@ class timeline {
 							tooltipDiv.transition()
 							   		  .duration(200)
 							   		  .style("opacity", .9);
-							tooltipDiv.html( `Case ID: ${alignment.ID[0].seq}<br>duration: ${d.Duration}`)
+							tooltipDiv.html( `Case ID: ${alignment.ID[0].seq}<br>Duration: ${d.Duration}<br>StartTime: ${d.StartTime}<br>EndTime: ${d.EndTime}<br>Subrow: ${d.Subrow}`)
 									  .style("left", (d3.event.pageX) + "px")		
                 					  .style("top", (d3.event.pageY - 28) + "px");;
 						})

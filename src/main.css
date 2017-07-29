@@ -3,13 +3,27 @@
     background-color: #ffffff;
 }
 
+#editor {
+    overflow-y: scroll;
+}
+
 .visbackground {
     fill: #fcfcfc;
+    /*fill:#f2f2f9;*/
     pointer-events: all;
+    stroke: #a6a6a6;
+    stroke-width: 1;
+    stroke-dasharray: 5 2;
 }
 
 .bandbackground {
     fill: #fdfdfd;
+}
+
+.grids {
+    stroke: #a6a6a6;
+	stroke-width: 1;
+	stroke-dasharray: 5 2;
 }
 
 .zoom {
@@ -18,11 +32,15 @@
   pointer-events: all;
 }
 
+.hover_group:hover path {
+    stroke-opacity: 0.8;
+}
+
 .tooltip {	
     position: absolute;			
     text-align: left;			
-    width: 120px;					
-    height: 82px;					
+    width: auto;					
+    height: 84px;					
     padding: 8px;				
     font: 12px sans-serif;		
     background: lightblue;	
@@ -34,6 +52,17 @@
 .navigator-mask {
     cursor: move;
     fill: rgba(102,133,194,0.3);
+    stroke-width: 1;
+    stroke: #ffffff;
+    stroke-opacity: 0.8;
+}
+
+.scroll-bar {
+    cursor: move;
+    fill: rgba(102,133,194,0.8);
+    stroke-width: 1;
+    stroke: #ffffff;
+    stroke-opacity: 0.4;
 }
 
 .mask-controller {

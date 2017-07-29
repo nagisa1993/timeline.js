@@ -1,24 +1,27 @@
 import * as d3 from 'd3';
+import * as d3ScaleChromatic from 'd3-scale-chromatic';
 import styles from './main.css';
 var vis = {},
 	band = {},
+	scrollBand = {},
 	rate = {};
 var click = false;
 var group = null;
 var mask = null;
 var leftControl = null;
 var rightControl = null;
+var scrollBar = null;
 var tooltipDiv = null;
 var selectedElement, moveTarget, strokeWidth, bandStrokeWidth,
-  	currentX = 0, currentAxis = 0, dx, currentPosition = 0,
-  	dataLength = 0, dataVisible, dataInvisible, maskRate, scale, 
-  	groupX = 150, maskX = 0, maskWidth = 930;
+  	currentX = 0,currentY = 0, currentAxis = 0, dx, dy, currentPosition = 0,
+  	dataLength = 0, dataHeight = 0, dataVisible, dataInvisible, dataInvisibleY, maskRate, scale,
+  	groupX = 150, maskX = 0, barY = 0, maskWidth = 930, barWidth = 0, barHeight = 0;
 
 		var zoom = d3.zoom().scaleExtent([1, Infinity])
     		.translateExtent([[0, 0], [100, 100]])
     		.extent([[0, 0], [100, 100]])
 			.on("zoom", zoomed);
-const margin = {top: 10, right: 10, bottom: 10, left: 10},
+const margin = {top: 15, right: 15, bottom: 15, left: 15},
 	outerWidth = 950,
 	outerHeight = 500,
 	intervalRate = 0.5, // intervalRate = interval / path width;
@@ -33,16 +36,18 @@ class timeline {
 	}
 
 	draw(data) {
-
+		let colors = colorMap(data);
 		dataLength = data.scale;
 		console.log(dataLength);
 
 		band.h = 50; // band height
 		vis.w = width;
-		vis.h = height - band.h - 5; // chart height
+		vis.h = height - band.h; // chart height
+		scrollBand.h = vis.h;
+		scrollBand.w = 10;
 
 		rate.w = width / dataLength;
-		rate.h = band.h / vis.h;
+		// rate.h = band.h / vis.h;
 
 		const svg = d3.select(dom).append("svg")
 			        .attr("id", "svg")
@@ -87,7 +92,8 @@ class timeline {
 			.attr("transform", `scale(${initScale},1) translate(${initTrans},0)`);
 
 
-		strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
+		// strokeWidth = Math.min((vis.h - 4) / data.alignment.length, 20);
+		strokeWidth = 16;
 
 		// -------------------------------------------------------------------------------------
 		// data
@@ -96,26 +102,34 @@ class timeline {
 			.data(data.alignment)
 			.enter()
 				.append("g")
+				.attr("class", "hover_group")
 				//.each(test);
 				.each(function(alignment, i) {
 					// 这里不能用arrow function写，否则this就会读错为整体的dom
 					// can't use arrow function here
 					d3.select(this)
+						.append("path")
+						.attr("class", "grids")
+						.attr("d", `M 0 ${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + alignment.Height) - strokeWidth * intervalRate / 2} L ${dataLength} ${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + alignment.Height) - strokeWidth * intervalRate / 2}`)
+					d3.select(this)
 					  .selectAll("path")
 					  .data(alignment.value)
 					  .enter()
 					  	.append("path")
-					  	.attr("stroke", `rgb(102,133,194)`) // 颜色可以从colormap里取 // you can set attr for stroke from colormap
+					  	// .attr("stroke", "rgb(102,133,194)") // 颜色可以从colormap里取  ${d3ScaleChromatic.interpolateSpectral(i%11/10)} // you can set attr for stroke from colormap
 					  	.attr("stroke-width", strokeWidth)
 					  	.attr("d", (activity, j) => {
+							for (let i = 0; i < colors.length; i++) 
+								if (activity.activity == colors[i].activity) 
+									this.childNodes[j].setAttribute("stroke", colors[i].color);
 					  		// return `M ${activity.StartTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (1 + intervalRate) * (2 * i + 1 + activity.Subrow)}`;
-							return `M ${activity.StartTime} ${strokeWidth * (totalHeight +  intervalRate * (i + 1) + activity.Subrow)} L ${activity.EndTime} ${strokeWidth * (totalHeight +  intervalRate * (i + 1) + activity.Subrow)}`;
+							return `M ${activity.StartTime + 15} ${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + activity.Subrow)} L ${activity.EndTime + 15} ${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + activity.Subrow)}`;
 					  	})
 						.on("mouseover", function(d) { // tooltip
 							tooltipDiv.transition()
 							   		  .duration(200)
 							   		  .style("opacity", .9);
-							tooltipDiv.html( `Case ID: ${alignment.ID[0].seq}<br>Duration: ${d.Duration}<br>StartTime: ${d.StartTime}<br>EndTime: ${d.EndTime}<br>Subrow: ${d.Subrow}`)
+							tooltipDiv.html( `Case ID: ${alignment.ID[0].seq}<br>Activity: ${d.activity}<br>Duration: ${d.Duration}<br>StartTime: ${d.StartTime}<br>EndTime: ${d.EndTime}<br>Subrow: ${d.Subrow}`)
 									  .style("left", (d3.event.pageX) + "px")		
                 					  .style("top", (d3.event.pageY - 28) + "px");;
 						})
@@ -127,14 +141,16 @@ class timeline {
 						totalHeight += alignment.Height;
 				});
 
-				
+		// dataHeight = d3.select(".data-series");
+		dataHeight = d3.select(".data-series").node().getBBox().height;
+		rate.h = band.h / dataHeight;
 
 		// -------------------------------------------------------------------------------------
 		// axis
 
 		const axis1 = frame.append("g")
 			.attr("class", "axis")
-			.attr("transform", `translate(0,${vis.h})`);	
+			.attr("transform", `translate(0,${vis.h + 1})`);	
 
 		axis1.append("path")
 			// .attr("d", "M 5 100 L 395 100")
@@ -143,11 +159,20 @@ class timeline {
 
 		const axis2 = frame.append("g")
 			.attr("class", "axis")
-			.attr("transform", `translate(0,${vis.h + 50})`);
+			.attr("transform", `translate(0,${vis.h + 50 + 1})`);
 		axis2.append("path")
 			// .attr("d", "M 5 150 L 395 150")	
 			.attr("d", `M0,0V0H${width}V0`)
 			.attr("stroke", "#e6e6e6");
+
+		// -------------------------------------------------------------------------------------
+		// Grids
+
+		// d3.select(".data-series").selectAll("path")
+		// 	.append("path")
+		// 	.attr("d", `M0 0 L 0 ${dataHeight}`)
+		// 	.attr("stroke", "#161616")
+		// 	.attr("stroke-width", "1");
 
 		// -------------------------------------------------------------------------------------
 		// band
@@ -156,7 +181,7 @@ class timeline {
 
 		band.g = frame.append("g")
 			.attr("class", "band")
-			.attr("transform", `translate(0,${vis.h})`);
+			.attr("transform", `translate(0,${vis.h + 1})`);
 
 		band.g.append("rect")
 			.attr("class", "bandbackground")
@@ -174,9 +199,12 @@ class timeline {
 				.data(alignment.value)
 				.enter()
 				.append("path")
-				.attr("stroke", "rgb(102,133,194)")
+				.attr("stroke","rgb(102,133,194)")
 				.attr("stroke-width", bandStrokeWidth)
 				.attr("d", (activity, j) => {
+					for (let i = 0; i < colors.length; i++) 
+								if (activity.activity == colors[i].activity) 
+									this.childNodes[j].setAttribute("stroke", colors[i].color);
 					return `M ${activity.StartTime * rate.w} ${strokeWidth * (totalHeight2 +  intervalRate * (i + 1) + activity.Subrow) * rate.h} L ${activity.EndTime * rate.w} ${strokeWidth * (totalHeight2 +  intervalRate * (i + 1) + activity.Subrow) * rate.h}`
 				})
 				totalHeight2 += alignment.Height;
@@ -225,7 +253,63 @@ class timeline {
 					.append("div")
 					.attr("class", "tooltip")
 					.style("opacity", 0);
+
+		// -------------------------------------------------------------------------------------
+		// scroll bar
+
+		const barAxis = frame.append("g")
+			.attr("class", "scroll-axis")
+			.attr("transform", `translate(${vis.w - scrollBand.w},0)`);	
+
+		barAxis.append("path")
+			// .attr("d", "M 5 100 L 395 100")
+			.attr("d", `M0 0 V ${vis.h}`)
+			.attr("stroke", "rgba(102, 102, 102, 0.1)");
+		
+		barWidth = vis.w - scrollBand.w;
+		scrollBand.g = frame.append("g")
+			.attr("class", "scroll-band")
+			.attr("transform", `translate(${barWidth},0)`)
+
+		barHeight = vis.h / dataHeight * vis.h;
+		scrollBar = scrollBand.g.append("rect")
+			.attr("class", "scroll-bar")
+			.attr("transform", `translate(0,0)`)
+			.attr("width", scrollBand.w)
+        	.attr("height", barHeight)
+			.on("mousedown", selectElement);
+
 	}
+}
+
+function colorMap(data) {
+	let colorMap = [];
+	let colorObj = {};
+	let alignment = data.alignment;
+	for (var i = 0; i < alignment.length; i++) {
+		for (var j = 0; j < alignment[i].value.length; j++) {
+			let activity = alignment[i].value[j].activity;
+			if (colorMap.length == 0) {
+				colorObj.activity = activity;
+				colorObj.color = d3ScaleChromatic.interpolateSpectral(0);
+				colorMap.push(colorObj);
+				colorObj = {};
+			}
+			else 
+				for (var k = 0; k < colorMap.length; k++) {
+					if (colorMap[k].activity === activity) break;
+					else if (k == colorMap.length - 1) {
+						colorObj.activity = activity;
+						if (k <= 10) colorObj.color = d3ScaleChromatic.interpolateSpectral(k/10);
+						else if (k > 10 && k <= 15) colorObj.color = d3ScaleChromatic.interpolateRdPu((k - 10)/7);
+						else colorObj.color = d3ScaleChromatic.interpolateGreys((k- 15)%10/10);
+						colorMap.push(colorObj);
+						colorObj = {};
+					}
+				}
+		}
+	}
+	return colorMap;
 }
 
 function zoomed(){
@@ -251,16 +335,17 @@ function zoomed(){
 	maskRate = maskWidth / width;
 	dataVisible = maskRate * dataLength;
 	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	dataInvisibleY = (-1) * barY / vis.h * dataHeight;
 	scale = width / (maskRate * dataLength);
-	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
+	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${dataInvisibleY})`);
 }
 
 function selectElement() {
 	//console.log(this); // dom
 	click = true;
-	console.log(d3.event);
 	selectedElement = d3.select(this); // object
 	currentX = d3.event.clientX; // event.x
+	currentY = d3.event.clientY;
 
 	if (this.getAttribute("class") === 'mask-controller'){  // single move
 		console.log("single");
@@ -269,9 +354,13 @@ function selectElement() {
     	// make controller to the top
     	//svg.appendChild(evt.target);
     }
- 	else { 						// group move
+ 	else if (this.getAttribute("class") === 'navigator-mask'){ 						// group move
     	moveTarget = this.parentNode;
  	}
+	else {
+		moveTarget = this;
+		dy = parseFloat(moveTarget.getAttribute("transform").slice(10,-1).split(',')[1]);
+	}
 	
  	d3.select("#svg").on("mousemove", moveElement);
 	// d3.select("#svg").on("mouseout", deselectElement);
@@ -280,32 +369,38 @@ function selectElement() {
 
 function moveElement() {
 	currentAxis = moveTarget.getAttribute("transform").slice(10, -1).split(','); // ["392", "0"]
-	if(moveTarget.nodeName === "rect") { 
+	if(moveTarget.getAttribute("class") === "mask-controller") { 
 		dx += d3.event.clientX - currentX;   // 移动滑动块，累计每次的位移，取相对位移，限定boundary // accumulation moving distance for left/right controllers = relative distance
 		// currentAxis[0] = (dx + groupX < 2.5 ? -2.5 : (dx + groupX > 927.5 ? 927.5 - groupX : dx)); // limit boundary
 		currentAxis[0] = dx;
-		// console.log(dx);
 		// syncronize zoom scale
 		d3.select(".visbackground")
 			.call(zoom.transform, d3.zoomIdentity
 			.scale(width / maskWidth));
 	}
+	else if (moveTarget.getAttribute("class") === "scroll-bar") {
+		dy += d3.event.clientY - currentY;
+		// currentAxis[1] = dy;
+		let barTrans = parseFloat(selectedElement._groups[0][0].getAttribute("transform").slice(10, -1).split(',')[1]);
+		currentAxis[1] = dy < 0 ? 0 : dy + barHeight - 2 > vis.h  ? vis.h - barHeight + 2 : dy;
+	}
 	else {
 		if (selectedElement._groups[0][0].getAttribute("transform")!=null) {
-			var maskTrans = parseFloat(selectedElement._groups[0][0].getAttribute("transform").slice(10, -1).split(',')[0]);
+			let maskTrans = parseFloat(selectedElement._groups[0][0].getAttribute("transform").slice(10, -1).split(',')[0]);
 			currentAxis[0] = (d3.event.clientX - currentX + parseFloat(currentAxis[0]) + parseFloat(maskTrans) < 0 ? 0 - parseFloat(maskTrans) : (d3.event.clientX - currentX + parseFloat(currentAxis[0])) > (width - maskWidth - maskTrans) ? (width - maskWidth - maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]));  
 	}
 		// currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance;
 	}
-	
 	moveTarget.setAttribute("transform", `translate(${currentAxis.join(',')})`);
 	currentX = d3.event.clientX;
+	currentY = d3.event.clientY;
 
 	// change mask according to controller movements
 	let ctrl1 = leftControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0],
 		ctrl2 = rightControl._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0];
 		groupX = group._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[0];
 	maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5; // 2.5是滑块的半长 // 2.5 = left/right controller's half width
+	barY = scrollBar._groups[0][0].attributes.transform.value.slice(10, -1).split(',')[1];
 	maskWidth = Math.abs(parseFloat(ctrl1) - parseFloat(ctrl2));
 	mask._groups[0][0].setAttribute("transform", `translate(${maskX},${0})`);
 	mask._groups[0][0].setAttribute("width", maskWidth);
@@ -314,8 +409,9 @@ function moveElement() {
 	maskRate = maskWidth / width;
 	dataVisible = maskRate * dataLength;
 	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	dataInvisibleY = (-1) * barY / vis.h * dataHeight;
 	scale = width / (maskRate * dataLength);
-	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${0})`);
+	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${dataInvisibleY})`);
 }
 
 function deselectElement() {

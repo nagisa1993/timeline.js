@@ -50,7 +50,7 @@
 	{"EndTime":943,"StartTime":937,"Duration":6,"Subrow":0},
 	{"EndTime":959,"StartTime":956,"Duration":3,"Subrow":0},
 	{"EndTime":1092,"StartTime":1037,"Duration":55,"Subrow":0}]}]};
-	timeline.draw(dataset);
+	// timeline.draw(dataset);
 
 // Read .csv file 
 	$.ajax({
@@ -72,10 +72,9 @@
 			var time = contents[2].split(":");
 			obj.StartTime = (+time[0]) * 60 * 60 + (+time[1]) * 60 + (+time[2]);
 			var time = contents[3].split(":");
-			obj.EndTime = (+time[0]) * 60 * 60 + (+time[1]) * 60 + (+time[2]);
+			obj.EndTime = (+time[0]) * 60 * 60 + (+time[1]) * 60 + (+time[2]) + 1;
 			result.push(obj);
 		}
-		console.log(result);
 
 		var data = {};
 		// Find the scale
@@ -88,12 +87,14 @@
 			ID = [],
 			value = [];
 		for (var i = 0; i < result.length; i++) {
+			// if (result[i].EndTime == result[i].StartTime) result[i].EndTime++;
 			if (i == 0) {
 				ID.push({"seq":result[i].seq});
 				alignObj.ID = ID;
-				value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity});
+				alignObj.Height = 1;
+				value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity,"Subrow":0});
 			} else {
-				if (result[i].seq===result[i - 1].seq) value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity});
+				if (result[i].seq===result[i - 1].seq) value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity,"Subrow":0});
 				else {
 					alignObj.value = value;
 					alignment.push(alignObj);
@@ -102,17 +103,34 @@
 					ID = [];
 					ID.push({"seq":result[i].seq});
 					alignObj.ID = ID;
-					value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity});
+					alignObj.Height = 1;
+					value.push({"EndTime":result[i].EndTime,"StartTime":result[i].StartTime,"Duration":parseInt(result[i].EndTime - result[i].StartTime),"activity":result[i].activity,"Subrow":0});
 				}
 			}
 		}
 		alignObj.value = value;
 		alignment.push(alignObj);
-		data.alignment = alignment;
-		// Detect overlaps and set subrows & heights
 		
+		// Detect overlaps and set subrows & heights
+		for (var i = 0; i < alignment.length; i++) {
+			alignment[i].value.sort(function(a, b) {
+				return parseFloat(a.StartTime) - parseFloat(b.StartTime);
+			});
+			var endLocation = alignment[i].value[0].EndTime;
+			for (var j = 1; j < alignment[i].value.length; j++){
+				if (alignment[i].value[j].StartTime < endLocation) {
+					alignment[i].value[j].Subrow++;
+					if (alignment[i].Height - 1 < alignment[i].value[j].Subrow) alignment[i].Height = alignment[i].value[j].Subrow + 1;
+				}
+				else {
+					endLocation = alignment[i].value[j].EndTime;
+				}
+			}
+		}
 
+		data.alignment = alignment;
 		console.log(data);
+		timeline.draw(data);
 	}
 	</script>
 </body>

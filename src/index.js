@@ -3,6 +3,8 @@ import * as d3ScaleChromatic from 'd3-scale-chromatic';
 import styles from './main.css';
 var vis = {},
 	band = {},
+	rowHead = {},
+	rowData = {},
 	scrollBand = {},
 	rate = {};
 var click = false;
@@ -41,12 +43,15 @@ class timeline {
 		console.log(dataLength);
 
 		band.h = 50; // band height
-		vis.w = width;
+		band.w = width;
+		rate.w = width / dataLength;
+		rowHead.w = 70;
+		vis.w = width - rowHead.w;
 		vis.h = height - band.h; // chart height
 		scrollBand.h = vis.h;
 		scrollBand.w = 10;
 
-		rate.w = width / dataLength;
+		
 		// rate.h = band.h / vis.h;
 
 		const svg = d3.select(dom).append("svg")
@@ -77,12 +82,21 @@ class timeline {
 		const initScale = width / (maskWidth / width * dataLength);
 		const initTrans = (-1) * (width / 2 - maskWidth / 2 ) * dataLength / width; 
 
+		// rowHead.g = frame.append("g")
+		// 	.attr("class", "row-head")
+
+		// rowHead.g.append("rect")
+		// 	.attr("class", "row-head-background")
+		// 	.attr("width", rowHead.w)
+		// 	.attr("height", vis.h);
+
 		vis.g = frame.append("g")
-					.attr("class", "visband");
+					.attr("class", "visband")
+					.attr("transform", `translate(${rowHead.w - 10}, 0)`);
 
 		vis.g.append("rect")
 			.attr("class", "visbackground")
-			.attr("width", vis.w)
+			.attr("width", vis.w + 10)
 			.attr("height", vis.h)
 			.call(zoom);
 
@@ -145,6 +159,43 @@ class timeline {
 		dataHeight = d3.select(".data-series").node().getBBox().height;
 		rate.h = band.h / dataHeight;
 
+		
+		// -------------------------------------------------------------------------------------
+		// Render Case ID Here
+
+		rowHead.g = frame.append("g")
+			.attr("class", "row-head")
+
+		rowHead.g.append("rect")
+			.attr("class", "row-head-background")
+			.attr("width", rowHead.w)
+			.attr("height", vis.h);
+
+		rowHead.g.append("g")
+			.attr("class", "data-id")
+
+		totalHeight = 0;
+		let headItems = d3.select(".data-id").selectAll("g")//////////////////
+				.data(data.alignment)
+				.enter()
+					.append("g")
+					//.each(test);
+					.each(function(alignment, i) {
+						// 这里不能用arrow function写，否则this就会读错为整体的dom
+						// can't use arrow function here
+						d3.select(this)
+							.append("path")
+							.attr("class", "grids")
+							.attr("d", `M 0 ${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + alignment.Height) - strokeWidth * intervalRate / 2} L ${rowHead.w} ${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + alignment.Height) - strokeWidth * intervalRate / 2}`);
+						d3.select(this)
+							.append("text")
+							.attr("class", "id-text")
+							.attr("x", 5)
+							.attr("y",`${3 + strokeWidth * (totalHeight +  intervalRate * (i + 1) + alignment.Height / 2) - strokeWidth * intervalRate / 2}`)
+							.text(`${alignment.ID[0].seq}`);
+							totalHeight += alignment.Height;
+					});
+
 		// -------------------------------------------------------------------------------------
 		// axis
 
@@ -166,15 +217,6 @@ class timeline {
 			.attr("stroke", "#e6e6e6");
 
 		// -------------------------------------------------------------------------------------
-		// Grids
-
-		// d3.select(".data-series").selectAll("path")
-		// 	.append("path")
-		// 	.attr("d", `M0 0 L 0 ${dataHeight}`)
-		// 	.attr("stroke", "#161616")
-		// 	.attr("stroke-width", "1");
-
-		// -------------------------------------------------------------------------------------
 		// band
 		
 		bandStrokeWidth = band.h * strokeWidth / vis.h; 
@@ -185,7 +227,7 @@ class timeline {
 
 		band.g.append("rect")
 			.attr("class", "bandbackground")
-			.attr("width", vis.w)
+			.attr("width", width)
 			.attr("height", band.h);
 
 		let totalHeight2 = 0;
@@ -259,14 +301,14 @@ class timeline {
 
 		const barAxis = frame.append("g")
 			.attr("class", "scroll-axis")
-			.attr("transform", `translate(${vis.w - scrollBand.w},0)`);	
+			.attr("transform", `translate(${width - scrollBand.w},0)`);	
 
 		barAxis.append("path")
 			// .attr("d", "M 5 100 L 395 100")
 			.attr("d", `M0 0 V ${vis.h}`)
 			.attr("stroke", "rgba(102, 102, 102, 0.1)");
 		
-		barWidth = vis.w - scrollBand.w;
+		barWidth = width - scrollBand.w;
 		scrollBand.g = frame.append("g")
 			.attr("class", "scroll-band")
 			.attr("transform", `translate(${barWidth},0)`)
@@ -322,9 +364,9 @@ function zoomed(){
 		maskX = Math.min(parseFloat(ctrl1), parseFloat(ctrl2)) + 2.5,
 		maskWidth0 = maskWidth;
 	// Change after zoom
-	maskWidth = parseFloat(width / currentScale);
+	maskWidth = parseFloat(band.w / currentScale);////
 	let maskWidthChanged = maskWidth0 - maskWidth;
-	maskX = parseFloat(groupX) + maskX < 0 ? (-1) * parseFloat(groupX) : parseFloat(groupX) + maskX + maskWidth > width ? maskX + maskWidthChanged : maskX + maskWidthChanged / 2;
+	maskX = parseFloat(groupX) + maskX < 0 ? (-1) * parseFloat(groupX) : parseFloat(groupX) + maskX + maskWidth > band.w ? maskX + maskWidthChanged : maskX + maskWidthChanged / 2;////
 	ctrl1 = maskX - 2.5;
 	ctrl2 = maskX + maskWidth - 2.5;
 	leftControl._groups[0][0].setAttribute("transform", `translate(${ctrl1}, 12.5)`);
@@ -332,11 +374,11 @@ function zoomed(){
 	mask._groups[0][0].setAttribute("transform", `translate(${maskX},0)`);
 	mask._groups[0][0].setAttribute("width", `${maskWidth}`);
 	// Change display area
-	maskRate = maskWidth / width;
+	maskRate = maskWidth / band.w;
 	dataVisible = maskRate * dataLength;
-	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / band.w; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
 	dataInvisibleY = (-1) * barY / vis.h * dataHeight;
-	scale = width / (maskRate * dataLength);
+	scale = vis.w / (maskRate * dataLength);
 	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${dataInvisibleY})`);
 }
 
@@ -376,7 +418,7 @@ function moveElement() {
 		// syncronize zoom scale
 		d3.select(".visbackground")
 			.call(zoom.transform, d3.zoomIdentity
-			.scale(width / maskWidth));
+			.scale(band.w / maskWidth));
 	}
 	else if (moveTarget.getAttribute("class") === "scroll-bar") {
 		dy += d3.event.clientY - currentY;
@@ -387,7 +429,7 @@ function moveElement() {
 	else {
 		if (selectedElement._groups[0][0].getAttribute("transform")!=null) {
 			let maskTrans = parseFloat(selectedElement._groups[0][0].getAttribute("transform").slice(10, -1).split(',')[0]);
-			currentAxis[0] = (d3.event.clientX - currentX + parseFloat(currentAxis[0]) + parseFloat(maskTrans) < 0 ? 0 - parseFloat(maskTrans) : (d3.event.clientX - currentX + parseFloat(currentAxis[0])) > (width - maskWidth - maskTrans) ? (width - maskWidth - maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]));  
+			currentAxis[0] = (d3.event.clientX - currentX + parseFloat(currentAxis[0]) + parseFloat(maskTrans) < 0 ? 0 - parseFloat(maskTrans) : (d3.event.clientX - currentX + parseFloat(currentAxis[0])) > (band.w - maskWidth - maskTrans) ? (band.w - maskWidth - maskTrans) : d3.event.clientX - currentX + parseFloat(currentAxis[0]));  
 	}
 		// currentAxis[0] = d3.event.clientX - currentX + parseFloat(currentAxis[0]);// 移动mask，取绝对位移，限定boundary // moving distance for mask = absolute distance;
 	}
@@ -406,12 +448,14 @@ function moveElement() {
 	mask._groups[0][0].setAttribute("width", maskWidth);
 
 	// change display area
-	maskRate = maskWidth / width;
+	maskRate = maskWidth / band.w;
 	dataVisible = maskRate * dataLength;
-	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / width; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
+	dataInvisible = (-1) * (maskX + parseFloat(groupX)) * dataLength / band.w; // maskX + groupX是mask的绝对x距离 // maskX + groupX = mask's absolute X distance
 	dataInvisibleY = (-1) * barY / vis.h * dataHeight;
-	scale = width / (maskRate * dataLength);
+	scale = vis.w / (maskRate * dataLength);
 	vis.g._groups[0][0].childNodes[1].setAttribute("transform", `scale(${scale},${1}) translate(${dataInvisible},${dataInvisibleY})`);
+	rowHead.g._groups[0][0].childNodes[1].setAttribute("transform", `translate(0,${dataInvisibleY})`);
+	
 }
 
 function deselectElement() {

@@ -1,6 +1,11 @@
+body {
+    font-family: "Helvetica Neue", "Roboto", Helvetica, Arial, sans-serif;
+    color: #444444;
+}
+
 #svg {
     border: 1px solid #e6e6e6;
-    background-color: #ffffff;
+    background-color: #f2f2f2;
 }
 
 #editor {
@@ -8,12 +13,16 @@
 }
 
 .visbackground {
-    fill: #fcfcfc;
-    /*fill:#f2f2f9;*/
+    fill: #ffffff;
+    /*fill:#fafafa;*/
     pointer-events: all;
-    stroke: #a6a6a6;
+    /*stroke: #a6a6a6;
     stroke-width: 1;
-    stroke-dasharray: 5 2;
+    stroke-dasharray: 5 2;*/
+}
+
+.row-head-background {
+    fill: #f7f7f7;
 }
 
 .bandbackground {
@@ -24,6 +33,11 @@
     stroke: #a6a6a6;
 	stroke-width: 1;
 	stroke-dasharray: 5 2;
+}
+
+.id-text {
+    color: #333333;
+    font-size: 15px;
 }
 
 .zoom {
@@ -51,18 +65,20 @@
 
 .navigator-mask {
     cursor: move;
-    fill: rgba(102,133,194,0.3);
+    /*fill: rgba(102,133,194,0.3);*/
+    fill: rgba(255,255,255,0.6);
     stroke-width: 1;
-    stroke: #ffffff;
+    stroke: #cccccc;
     stroke-opacity: 0.8;
 }
 
 .scroll-bar {
     cursor: move;
-    fill: rgba(102,133,194,0.8);
-    stroke-width: 1;
-    stroke: #ffffff;
-    stroke-opacity: 0.4;
+    /*fill: rgba(102,133,194,0.8);*/
+    fill: rgba(31,31,31,0.6);
+    /*stroke-width: 1;
+    stroke: #1f1f1f;
+    stroke-opacity: 0.4;*/
 }
 
 .mask-controller {
